@@ -1,4 +1,6 @@
-![Autodarts + Logo](assets/img/logo.png)
+<p align="center">
+  <img src="assets/img/logo.png" alt="Autodarts + Logo" width="200">
+</p>
 
 Autodarts +
 ===========
