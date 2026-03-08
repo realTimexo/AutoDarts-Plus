@@ -3,43 +3,26 @@
   "name": "AutoDarts +",
   "version": "1.1.0",
   "description": "AutoDarts + enhances the experience for AutoDarts with new features",
-  "author": "Timexo",
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "customize-darts@timexo.io",
-      "data_collection_permissions": {
-        "required": [
-          "none"
-        ]
-      }
-    }
-  },
-  "permissions": [
-    "storage"
-  ],
+   "author": "Timexo",
+  "permissions": ["storage"],
   "host_permissions": [
     "https://play.autodarts.io/*",
     "https://api.autodarts.io/*"
   ],
   "icons": {
-    "16": "icon/16.png",
-    "48": "icon/48.png",
+    "16":  "icon/16.png",
+    "48":  "icon/48.png",
     "128": "icon/128.png"
   },
   "content_scripts": [
     {
-      "matches": [
-        "https://play.autodarts.io/*"
-      ],
-      "js": [
-        "src/core/pageScript.js"
-      ],
-      "run_at": "document_start"
+      "matches": ["https://play.autodarts.io/*"],
+      "js": ["src/core/pageScript.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
     },
     {
-      "matches": [
-        "https://play.autodarts.io/*"
-      ],
+      "matches": ["https://play.autodarts.io/*"],
       "js": [
         "src/core/constants.js",
         "src/core/tokenHelper.js",
