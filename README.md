@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="icon/128.png" alt="Autodarts + Logo" width="200">
+  <img src="assets/img/autodarts+ logo.png" alt="Autodarts + Logo" width="200">
 </p>
 
 <h1 align="center">
