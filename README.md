@@ -11,7 +11,8 @@ Autodarts +
 
 * * *
 
-> \[!CAUTION\] **AutoDarts +** is developed by the community and is not an integral part of the official Autodarts platform.
+> [!CAUTION]
+> **AutoDarts +** is developed by the community and is not an integral part of the official Autodarts platform.
 
 📋 Overview
 -----------
