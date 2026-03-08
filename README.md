@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/img/logo.png" alt="Autodarts + Logo" width="200">
+  <img src="https://raw.githubusercontent.com/realTimexo/AutoDarts-Plus/refs/heads/main/assets/img/logo.png" alt="Autodarts + Logo" width="200">
 </p>
 
 Autodarts +
