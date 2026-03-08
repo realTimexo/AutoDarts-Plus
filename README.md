@@ -6,11 +6,20 @@
 Tools for Autodarts
 </h1>
 
-<p align="center"><img src="https://img.shields.io/github/actions/workflow/status/creazy231/tools-for-autodarts/release.yml" alt="GitHub Actions Workflow Status">&nbsp;<img src="https://img.shields.io/github/package-json/v/creazy231/tools-for-autodarts" alt="GitHub package.json version">&nbsp;<a href="https://github.com/creazy231/tools-for-autodarts/releases"><img src="https://img.shields.io/github/v/release/creazy231/tools-for-autodarts" alt="GitHub Release"></a></p>
+<p align="center">
+<img src="https://img.shields.io/github/actions/workflow/status/creazy231/tools-for-autodarts/release.yml">
+<img src="https://img.shields.io/github/v/release/creazy231/tools-for-autodarts">
+<img src="https://img.shields.io/amo/v/autodarts-plus?logo=firefox&label=Firefox">
+<img src="https://img.shields.io/amo/users/autodarts-plus?logo=firefox&label=Firefox%20Users">
+<img src="https://img.shields.io/badge/dynamic/json?url=https://microsoftedge.microsoft.com/addons/getproductdetailsbycrxid/emckdnomcmmjiimehoiakppgmmcfagdn&query=$.version&label=Edge&logo=microsoftedge">
+<img src="https://img.shields.io/badge/Edge-Available-blue?logo=microsoftedge">
+</p>
 
-<p align="center"><a href="https://chromewebstore.google.com/detail/tools-for-autodarts/oolfddhehmbpdnlmoljmllcdggmkgihh"><img src="https://img.shields.io/chrome-web-store/v/oolfddhehmbpdnlmoljmllcdggmkgihh?logo=google-chrome&logoColor=%23FFFFFF&label=Chrome" alt="Chrome Web Store Version"></a>&nbsp;<a href="https://addons.mozilla.org/de/firefox/addon/tools-for-autodarts"><img src="https://img.shields.io/amo/v/tools-for-autodarts?logo=firefox&logoColor=%23FFFFFF&label=Firefox" alt="Mozilla Add-on Version"></a>&nbsp;<a href="https://intradeus.github.io/http-protocol-redirector?r=altstore://source?url=https://raw.githubusercontent.com/creazy231/tools-for-autodarts/refs/heads/main/Autodarts_Tools_Source.json"><img src="https://img.shields.io/github/v/release/creazy231/tools-for-autodarts?logo=apple&logoColor=%23FFFFFF&label=AltStore%20iOS&color=007AFF" alt="AltStore iOS Version"></a></p>
-
-<p align="center"><a href="https://chromewebstore.google.com/detail/tools-for-autodarts/oolfddhehmbpdnlmoljmllcdggmkgihh"><img src="https://img.shields.io/chrome-web-store/users/oolfddhehmbpdnlmoljmllcdggmkgihh?logo=google-chrome&logoColor=%23FFFFFF&label=Chrome%20Users" alt="Chrome Web Store Users"></a>&nbsp;<a href="https://addons.mozilla.org/de/firefox/addon/tools-for-autodarts"><img src="https://img.shields.io/amo/users/tools-for-autodarts?logo=firefox&logoColor=%23FFFFFF&label=Firefox%20Users&color=4c1" alt="Mozilla Add-on Users"></a>&nbsp;<a href="https://ko-fi.com/creazy231"><img src="https://img.shields.io/badge/Ko--fi-Support%20me%20on%20Ko--fi-FF5E5B?logo=ko-fi&logoColor=white" alt="Support me on Ko-fi"></a></p>
+<p align="center">
+<a href="https://www.paypal.com/donate/?hosted_button_id=38GT8LH75W4GU">
+<img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-PayPal-FF5E5B?logo=paypal&logoColor=white">
+</a>
+</p>
 
 <hr>
 
