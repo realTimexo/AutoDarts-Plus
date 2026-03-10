@@ -1,17 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "AutoDarts +",
-  "version": "1.1.0",
+  "name": "AutoDarts Plus",
+  "version": "1.2.0",
   "description": "AutoDarts + enhances the experience for AutoDarts with new features",
-   "author": "Timexo",
   "permissions": ["storage"],
   "host_permissions": [
     "https://play.autodarts.io/*",
     "https://api.autodarts.io/*"
   ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "autodarts-plus@timexo-studios.com",
+      "strict_min_version": "109.0"
+    }
+  },
   "icons": {
-    "16":  "icon/16.png",
-    "48":  "icon/48.png",
+    "16": "icon/16.png",
+    "48": "icon/48.png",
     "128": "icon/128.png"
   },
   "content_scripts": [
