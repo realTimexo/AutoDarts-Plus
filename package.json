@@ -1,0 +1,18 @@
+{
+  "name": "autodarts-plus-extension",
+  "version": "1.2.0",
+  "description": "Enhances AutoDarts with new functions, customization options, and much more.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:firefox": "vite build --mode firefox",
+    "zip": "vite build && node -e \"const fs = require('fs'); const archiver = require('archiver'); const output = fs.createWriteStream('autodarts-plus-v1.2.0.zip'); const archive = archiver('zip'); archive.pipe(output); archive.directory('dist/', false); archive.finalize();\""
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "@crxjs/vite-plugin": "^2.0.0-beta.23",
+    "archiver": "^6.0.0"
+  }
+}
+
