@@ -13,16 +13,16 @@
     "48":  "icon/48.png",
     "128": "icon/128.png"
   },
-"content_scripts": [
-  {
-    "matches": ["https://play.autodarts.io/*"],
-    "js": ["assets/pageScript.js-D_5Y7MLN.js"],
-    "run_at": "document_start",
-    "world": "MAIN"
-  },
-  {
-    "matches": ["https://play.autodarts.io/*"],
-    "js": [
+  "content_scripts": [
+    {
+      "matches": ["https://play.autodarts.io/*"],
+      "js": ["assets/pageScript.js-D_5Y7MLN.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://play.autodarts.io/*"],
+      "js": [
       "assets/constants.js-CslvUQqv.js",
       "assets/tokenHelper.js-w9b0Kl2-.js",
       "assets/state.js-C1OI5esN.js",
@@ -39,7 +39,8 @@
       "assets/actions.js-UyGtT4zT.js",
       "assets/renderer.js-tZ6b90Bg.js",
       "assets/content.js-m4yH4jg9.js"
-    ],
-    "run_at": "document_idle"
-  }
-]
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
