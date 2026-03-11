@@ -6,8 +6,7 @@
     "dev": "vite",
     "build": "yarn build:chrome && yarn build:firefox",
     "build:chrome": "vite build --mode chrome && node zip-script.cjs chrome",
-    "build:firefox": "vite build --mode firefox && node zip-script.cjs firefox",
-    "zip": "node zip-script.cjs"
+    "build:firefox": "vite build --mode firefox && node zip-script.cjs firefox"
   },
   "devDependencies": {
     "vite": "^5.4.0",
