@@ -1,4 +1,4 @@
-// ================================================================
+/ ================================================================
 //  AutoDarts + – content.js  v3.0
 //  Hub · Dart Skin Customizer · Local Tournaments · Ranked
 //  Single extension — no cross-extension conflicts possible
@@ -215,6 +215,133 @@ function openColorPicker(partKey,anchor){
 }
 const updatePreview=()=>{const p=document.getElementById('adt-prev');if(p)p.innerHTML=buildSvg(liveColors);};
 
+// ─── Import / Export ──────────────────────────────────────────────
+const TOURNEY_KEY = 'ad_local_tourney';
+
+function addLog(logEl, msg, type){
+  // type: 'ok' | 'warn' | 'err'
+  const row = document.createElement('div');
+  const color = type==='warn' ? '#ECC94B' : type==='err' ? '#FC8181' : '#68D391';
+  const prefix = type==='warn' ? '⚠ ' : type==='err' ? '✗ ' : '✓ ';
+  row.style.cssText = `font-size:.72rem;color:${color};padding:.1rem 0;line-height:1.55;`;
+  row.textContent = prefix + msg;
+  logEl.appendChild(row);
+}
+
+async function runExport(logEl){
+  const out = { version:'1.0', exportedAt: new Date().toISOString() };
+
+  // ── Ranked ──
+  const rd = await loadRanked();
+  if(rd && typeof rd.matchesPlayed !== 'undefined'){
+    const rank = RANKS[rd.rankIndex] || RANKS[0];
+    out.ranked = {
+      rankName:     rank.name,
+      rankIndex:    rd.rankIndex,
+      percentage:   rd.percentage,
+      matchesPlayed:rd.matchesPlayed,
+      wins:         rd.wins,
+      losses:       rd.losses,
+      winRate:      rd.matchesPlayed>0 ? Math.round((rd.wins/rd.matchesPlayed)*100) : 0,
+      botLevel:     rd.botLevel,
+      username:     rd.username,
+      recentMatches: (rd.history||[]).slice(0,10).map(h=>({
+        result:    h.won?'Win':'Loss',
+        change:    h.change,
+        rankBefore:RANKS[h.rankBeforeId]?.name||'?',
+        rankAfter: RANKS[h.rankAfterId]?.name||'?',
+        date:      new Date(h.date).toISOString(),
+        botLevel:  h.botLevel
+      })),
+      fullHistory: rd.history||[]
+    };
+    addLog(logEl, `Ranked — Rank: ${rank.name} (${rd.percentage}%), Spiele: ${rd.matchesPlayed}, Siege: ${rd.wins}, Win-Rate: ${out.ranked.winRate}%`, 'ok');
+    if(!rd.username) addLog(logEl, 'Ranked — Username nicht gefunden (kein Spiel beendet?)', 'warn');
+    if(!rd.matchesPlayed) addLog(logEl, 'Ranked — Noch keine Spiele gespielt', 'warn');
+  } else {
+    addLog(logEl, 'Ranked — Keine Daten gefunden', 'warn');
+  }
+
+  // ── Local Tournaments ──
+  await new Promise(res => chrome.storage.local.get(TOURNEY_KEY, d => {
+    if(d[TOURNEY_KEY] && Object.keys(d[TOURNEY_KEY]).length){
+      out.tournaments = d[TOURNEY_KEY];
+      const t = d[TOURNEY_KEY];
+      const name = t.tournament?.name || t.name || '(Turnier)';
+      const mode = t.tournament?.mode || t.mode || '?';
+      addLog(logEl, `Lokale Turniere — "${name}", Modus: ${mode}`, 'ok');
+    } else {
+      addLog(logEl, 'Lokale Turniere — Keine Turnierdaten gefunden', 'warn');
+    }
+    res();
+  }));
+
+  // ── Customize Darts ──
+  const dc = await loadColors();
+  if(dc){
+    out.customizeDarts = dc;
+    const parts = ['flight','shaft','barrel','point'].map(k=>k+': '+dc[k]).join(', ');
+    addLog(logEl, `Customize Darts — ${parts}`, 'ok');
+    addLog(logEl, `Customize Darts — Enabled: ${dc.enabled}, Blend: ${dc.blend}, Custom SVG: ${dc.useCustomSvg?'aktiv':'inaktiv'}`, 'ok');
+    if(dc.useCustomSvg && dc.customSvg) addLog(logEl, `Customize Darts — Custom SVG gespeichert (${dc.customSvg.length} Zeichen)`, 'ok');
+    else if(dc.useCustomSvg) addLog(logEl, 'Customize Darts — Custom SVG Modus aktiv aber kein SVG vorhanden', 'warn');
+  } else {
+    addLog(logEl, 'Customize Darts — Keine Daten gefunden', 'warn');
+  }
+
+  return out;
+}
+
+async function runImport(json, logEl){
+  let data;
+  try { data = typeof json==='string' ? JSON.parse(json) : json; }
+  catch(e){ addLog(logEl,'JSON Parsing-Fehler: '+e.message,'err'); return false; }
+
+  if(!data.version){ addLog(logEl,'Ungültige Datei — kein version Feld','err'); return false; }
+
+  let anyImported = false;
+
+  // ── Ranked ──
+  if(data.ranked){
+    const rd = await loadRanked();
+    const merged = {
+      ...defaultRD(),
+      ...rd,
+      rankIndex:    data.ranked.rankIndex    ?? rd.rankIndex,
+      percentage:   data.ranked.percentage   ?? rd.percentage,
+      botLevel:     data.ranked.botLevel     ?? rd.botLevel,
+      matchesPlayed:data.ranked.matchesPlayed?? rd.matchesPlayed,
+      wins:         data.ranked.wins         ?? rd.wins,
+      losses:       data.ranked.losses       ?? rd.losses,
+      username:     data.ranked.username     ?? rd.username,
+      history:      data.ranked.fullHistory  || data.ranked.recentMatches?.map(m=>({won:m.result==='Win',change:m.change,rankBeforeId:RANKS.findIndex(r=>r.name===m.rankBefore),rankAfterId:RANKS.findIndex(r=>r.name===m.rankAfter),date:new Date(m.date).getTime(),botLevel:m.botLevel})) || rd.history
+    };
+    await saveRanked(merged);
+    const rank = RANKS[merged.rankIndex]||RANKS[0];
+    addLog(logEl, `Ranked importiert — Rang: ${rank.name} (${merged.percentage}%), Spiele: ${merged.matchesPlayed}`, 'ok');
+    anyImported = true;
+  } else { addLog(logEl, 'Ranked — nicht in Datei vorhanden, übersprungen', 'warn'); }
+
+  // ── Tournaments ──
+  if(data.tournaments){
+    await new Promise(res => chrome.storage.local.set({[TOURNEY_KEY]: data.tournaments}, res));
+    const name = data.tournaments?.tournament?.name || data.tournaments?.name || 'Turnier';
+    addLog(logEl, `Lokale Turniere importiert — "${name}"`, 'ok');
+    anyImported = true;
+  } else { addLog(logEl, 'Lokale Turniere — nicht in Datei vorhanden, übersprungen', 'warn'); }
+
+  // ── Customize Darts ──
+  if(data.customizeDarts){
+    const merged = {...DEFAULT_COLORS, ...data.customizeDarts};
+    await saveColors(merged);
+    liveColors = merged;
+    addLog(logEl, `Customize Darts importiert — Enabled: ${merged.enabled}, Blend: ${merged.blend}, Custom SVG: ${merged.useCustomSvg?'aktiv':'inaktiv'}`, 'ok');
+    anyImported = true;
+  } else { addLog(logEl, 'Customize Darts — nicht in Datei vorhanden, übersprungen', 'warn'); }
+
+  return anyImported;
+}
+
 // ─── Hub ──────────────────────────────────────────────────────────
 const PLUS_ICON=`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>`;
 
@@ -225,7 +352,11 @@ function hubCard(id,icon,ibg,ibrd,hvr,title,desc){
 function renderHubPage(){
   clearAllPages();const mc=getMain();if(!mc)return;hideMain();
   const pg=document.createElement('div');pg.id='adt-hub';pg.style.cssText=`display:flex;flex-direction:column;align-items:center;padding:2.5rem 1.5rem;color:white;font-family:${FONT};min-height:80vh;width:100%;box-sizing:border-box;`;
+
+  const btnBase=`cursor:pointer;font-family:${FONT};font-weight:600;font-size:.78rem;border-radius:9px;padding:.5rem 1rem;display:inline-flex;align-items:center;gap:.45rem;transition:background .15s;border:1px solid;`;
+
   pg.innerHTML=`<div style="width:100%;max-width:640px;display:flex;flex-direction:column;gap:1.1rem;">
+    <!-- Header -->
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.85rem;margin-bottom:.5rem;">
       <div style="display:flex;align-items:center;gap:.85rem;">
         <div style="width:42px;height:42px;background:linear-gradient(135deg,rgba(49,130,206,.35),rgba(128,90,213,.35));border:1px solid rgba(255,255,255,.12);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgba(99,179,237,.9);">${PLUS_ICON}</div>
@@ -233,14 +364,82 @@ function renderHubPage(){
       </div>
       <a href="${DONATE_URL}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.4rem;background:rgba(252,129,74,.08);border:1px solid rgba(252,129,74,.2);border-radius:8px;padding:.38rem .8rem;color:#fc8181;font-size:.73rem;font-weight:600;text-decoration:none;font-family:${FONT};" onmouseover="this.style.background='rgba(252,129,74,.18)'" onmouseout="this.style.background='rgba(252,129,74,.08)'"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>Donate</a>
     </div>
+
+    <!-- Feature cards -->
     ${hubCard('adt-c-cust',`<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(99,179,237,.9)"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`,'linear-gradient(135deg,rgba(49,130,206,.2),rgba(49,130,206,.08))','rgba(49,130,206,.28)','rgba(99,179,237,.3)','Customize Darts','Change the color and look of your dart arrows during matches. Per-part colors and custom SVG support.')}
     ${hubCard('adt-c-ranked',`<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(255,214,0,.9)"><path d="M12 2L13.09 8.26L20 9l-5.45 5.27L16 21l-4-2.1L8 21l1.45-6.73L4 9l6.91-.74L12 2z"/></svg>`,'linear-gradient(135deg,rgba(255,214,0,.18),rgba(255,150,0,.08))','rgba(255,214,0,.25)','rgba(255,214,0,.35)','Ranked','Climb from Bronze to World Master by beating bots. Track your rank, win rate and match history.')}
     ${hubCard('adt-c-tourn',`<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(104,211,145,.9)"><path d="M12 0L24 12V24H0V12L4 8V3H7V5L12 0ZM19 9h-2V7H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 19.9V22H7v2h10v-2h-4v-2.1a5.01 5.01 0 003.61-2.96C19.08 16.63 21 14.55 21 12V11c0-1.1-.9-2-2-2zM5 12V11h2v3.82C5.84 14.4 5 13.3 5 12zm14 0c0 1.3-.84 2.4-2 2.82V11h2v1z"/></svg>`,'linear-gradient(135deg,rgba(56,161,105,.2),rgba(56,161,105,.08))','rgba(56,161,105,.28)','rgba(104,211,145,.3)','Local Tournaments','KO · Groups + KO · League with automatic result sync and live bracket view.')}
+
+    <!-- Import / Export row -->
+    <div style="display:flex;gap:.7rem;flex-wrap:wrap;">
+      <button id="adt-hub-export" style="${btnBase}background:rgba(99,179,237,.1);border-color:rgba(99,179,237,.25);color:rgba(99,179,237,.9);flex:1;" onmouseover="this.style.background='rgba(99,179,237,.2)'" onmouseout="this.style.background='rgba(99,179,237,.1)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>Export</button>
+      <button id="adt-hub-import" style="${btnBase}background:rgba(104,211,145,.1);border-color:rgba(104,211,145,.25);color:rgba(104,211,145,.9);flex:1;" onmouseover="this.style.background='rgba(104,211,145,.2)'" onmouseout="this.style.background='rgba(104,211,145,.1)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M5 15h4v6h6v-6h4l-7-7-7 7zM5 4v2h14V4H5z"/></svg>Import</button>
+    </div>
+
+    <!-- Log panel (hidden by default) -->
+    <div id="adt-hub-logwrap" style="display:none;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1rem;">
+      <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);margin-bottom:.6rem;" id="adt-hub-logtitle">Log</div>
+      <div id="adt-hub-log" style="display:flex;flex-direction:column;gap:.1rem;"></div>
+      <div id="adt-hub-logactions" style="margin-top:.85rem;display:flex;gap:.6rem;"></div>
+    </div>
+
+    <!-- Hidden file input -->
+    <input type="file" id="adt-hub-filein" accept=".json" style="display:none;">
   </div>`;
+
   getMain().appendChild(pg);
   pg.querySelector('#adt-c-cust').onclick=async()=>{liveColors=await loadColors();history.pushState(null,'',CUSTOMIZE_PATH);renderCustomizePage();};
   pg.querySelector('#adt-c-ranked').onclick=()=>{history.pushState(null,'',RANKED_PATH);renderRankedPage();};
   pg.querySelector('#adt-c-tourn').onclick=()=>{history.pushState(null,'',TOURNEY_PATH);renderTournamentPage();};
+
+  // ── Export ──
+  pg.querySelector('#adt-hub-export').onclick=async()=>{
+    const wrap=document.getElementById('adt-hub-logwrap');
+    const logEl=document.getElementById('adt-hub-log');
+    const title=document.getElementById('adt-hub-logtitle');
+    const actions=document.getElementById('adt-hub-logactions');
+    logEl.innerHTML=''; actions.innerHTML='';
+    title.textContent='Export — Analysiere Daten...';
+    wrap.style.display='block';
+
+    const data = await runExport(logEl);
+    title.textContent='Export abgeschlossen';
+
+    // Download button
+    const dl=document.createElement('button');
+    dl.style.cssText=`${btnBase}background:rgba(99,179,237,.15);border-color:rgba(99,179,237,.3);color:rgba(99,179,237,.9);`;
+    dl.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>JSON herunterladen`;
+    dl.onmouseover=()=>dl.style.background='rgba(99,179,237,.25)';
+    dl.onmouseout=()=>dl.style.background='rgba(99,179,237,.15)';
+    dl.onclick=()=>{
+      const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;
+      a.download='autodarts-plus-backup-'+new Date().toISOString().slice(0,10)+'.json';
+      a.click();URL.revokeObjectURL(url);
+    };
+    actions.appendChild(dl);
+  };
+
+  // ── Import ──
+  pg.querySelector('#adt-hub-import').onclick=()=>{
+    document.getElementById('adt-hub-filein').click();
+  };
+  pg.querySelector('#adt-hub-filein').onchange=async function(){
+    const file=this.files[0]; if(!file) return;
+    const wrap=document.getElementById('adt-hub-logwrap');
+    const logEl=document.getElementById('adt-hub-log');
+    const title=document.getElementById('adt-hub-logtitle');
+    const actions=document.getElementById('adt-hub-logactions');
+    logEl.innerHTML=''; actions.innerHTML='';
+    title.textContent='Import — Lese Datei...';
+    wrap.style.display='block';
+
+    const text = await file.text();
+    const ok = await runImport(text, logEl);
+    title.textContent = ok ? 'Import abgeschlossen' : 'Import fehlgeschlagen';
+    this.value=''; // allow re-selecting same file
+  };
 }
 
 // ─── Customize ────────────────────────────────────────────────────
