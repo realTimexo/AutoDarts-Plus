@@ -1,15 +1,16 @@
 (function() {
-    // Sprachsteuerung über localStorage
-    const currentLng = 'en';
+    // Sprachsteuerung über AutoDarts' eigene i18next-Spracheinstellung
+    const currentLng = window.adTourney.getLang();
     const translations = {
         'de': { round: 'Runde' },
-        'en': { round: 'Round' }
+        'en': { round: 'Round' },
+        'nl': { round: 'Ronde' }
     };
-    const t = translations['en'];
+    const t = translations[currentLng] || translations['en'];
 
     // Styles für den Turnierbaum und die Linien
     const style = document.createElement('style');
-    style.innerHTML = `
+    style.textContent = `
         .bracket-wrapper.is-ko { min-width: max-content; }
         .bracket-container { display: flex; flex-direction: row; gap: 40px; padding: 10px 0; align-items: flex-start; }
         .round-col { display: flex; flex-direction: column; min-width: 300px; }
