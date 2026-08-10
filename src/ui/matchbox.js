@@ -1,7 +1,7 @@
 (function() {
     // Matchbox-spezifische Styles
     const style = document.createElement('style');
-    style.innerHTML = `
+    style.textContent = `
         .match-box { 
             position: relative; 
             background: rgba(40, 44, 52, 0.65); 
@@ -10,7 +10,7 @@
             border: 1px solid rgba(255, 255, 255, 0.12); 
             padding: 8px 16px; 
             border-radius: 18px; 
-            width: 320px; /* Leicht verbreitert für die Stats */
+            width: 320px; /* Leicht verbreitert fÃ¼r die Stats */
             height: 60px; 
             z-index: 10; 
             display: flex; 
@@ -37,12 +37,12 @@
 
         /* Stats-Bereich: Schiebt alles nach rechts */
         .stats-avg { 
-            margin-left: auto; /* Das drückt den Rest nach rechts */
+            margin-left: auto; /* Das drÃ¼ckt den Rest nach rechts */
             font-weight: 400; 
             color: rgba(160, 174, 192, 0.7); 
             padding-right: 12px; 
             font-size: 12px; 
-            font-family: monospace; /* Feste Breite für Zahlen */
+            font-family: monospace; /* Feste Breite fÃ¼r Zahlen */
         }
 
         .stats-legs { 
@@ -64,6 +64,55 @@
             border: none; cursor: pointer; flex-shrink: 0; margin-left: 12px; 
             box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.3), 0 4px 12px rgba(0,0,0,0.3);
         }
+        .btn-green { background-image: linear-gradient(135deg, #48bb78, #2f855a); }
+        .btn-red { background-image: linear-gradient(135deg, #F56565, #C53030); animation: pulse-red 2s infinite; }
+        
+        @keyframes pulse-red {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.9; }
+        }
+
+        .reset-match { background: transparent; border: none; color: rgba(255,255,255,0.4); cursor: pointer; font-size: 16px; margin-right: 4px; }
+    `;
+    document.head.appendChild(style);
+
+    window.adMatchbox = {
+        render: function(m, idx, type) {
+            const state = window.adTourney.state;
+            const isStarted = m.uuid && !m.finished;
+
+            // Play-Button anzeigen wenn: 
+            // 1. Spieler feststehen und Match nicht beendet ist
+            // 2. UND (entweder kein Match aktiv ist ODER genau dieses Match das aktive ist)
+            const canStart = !m.finished && m.p1 !== 'TBD' && m.p2 !== 'TBD';
+            const esc = window.adTourney.escapeHtml;
+
+            return `
+                <div class="match-box">
+                    <div class="match-content">
+                        <div class="player-row ${m.winner === m.p1 ? 'winner-text' : ''}">
+                            <span class="player-name ${m.p1 === 'TBD' ? 'player-tbd' : ''}">${esc(m.p1)}</span>
+                            ${canStart ? `<button class="surrender-btn" data-m="${idx}" data-p="1">ðŸ³</button>` : ''}
+                            <span class="stats-avg">${m.results ? m.results.p1A : ''}</span>
+                            <span class="stats-legs">${m.results ? m.results.p1L : ''}</span>
+                        </div>
+                        <div class="player-row ${m.winner === m.p2 ? 'winner-text' : ''}">
+                            <span class="player-name ${m.p2 === 'TBD' ? 'player-tbd' : ''}">${esc(m.p2)}</span>
+                            ${canStart ? `<button class="surrender-btn" data-m="${idx}" data-p="2">ðŸ³</button>` : ''}
+                            <span class="stats-avg">${m.results ? m.results.p2A : ''}</span>
+                            <span class="stats-legs">${m.results ? m.results.p2L : ''}</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center;">
+                        ${isStarted ? `<button class="reset-match" data-type="${type}" data-idx="${idx}" style="background:transparent; border:none; color:#A0AEC0; cursor:pointer; margin-right:8px; font-size:16px;">â†º</button>` : ''}
+                        ${canStart ? `<button class="play-match play-btn-round ${isStarted ? 'btn-red' : 'btn-green'}" data-type="${type}" data-idx="${idx}">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                        </button>` : ''}
+                    </div>
+                </div>`;
+        }
+    };
+})();        }
         .btn-green { background-image: linear-gradient(135deg, #48bb78, #2f855a); }
         .btn-red { background-image: linear-gradient(135deg, #F56565, #C53030); animation: pulse-red 2s infinite; }
         
