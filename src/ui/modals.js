@@ -1,14 +1,15 @@
 (function() {
-    // Sprachsteuerung über localStorage
-    const currentLng = 'en';
+    // Sprachsteuerung Ã¼ber AutoDarts' eigene i18next-Spracheinstellung
+    const currentLng = window.adTourney.getLang();
     const translations = {
         'de': { cancel: 'Abbrechen' },
-        'en': { cancel: 'Cancel' }
+        'en': { cancel: 'Cancel' },
+        'nl': { cancel: 'Annuleren' }
     };
-    const t = translations['en'];
+    const t = translations[currentLng] || translations['en'];
 
     const style = document.createElement('style');
-    style.innerHTML = `
+    style.textContent = `
         .ad-modal-overlay { 
             position: fixed; inset: 0; 
             background: rgba(0, 0, 0, 0.4); 
@@ -86,15 +87,16 @@
     window.adModals = {
         show: function({ title, text, confirmText, onConfirm, isSuccess = false }) {
             if (document.querySelector('.ad-modal-overlay')) return;
+            const esc = window.adTourney.escapeHtml;
             const overlay = document.createElement('div');
             overlay.className = 'ad-modal-overlay';
             overlay.innerHTML = `
                 <div class="ad-modal-content">
-                    <div style="font-size:24px; font-weight:800; color:white; margin-bottom:12px; text-transform:uppercase;">${title}</div>
-                    <div style="color:#A0AEC0; margin-bottom:30px;">${text}</div>
+                    <div style="font-size:24px; font-weight:800; color:white; margin-bottom:12px; text-transform:uppercase;">${esc(title)}</div>
+                    <div style="color:#A0AEC0; margin-bottom:30px;">${esc(text)}</div>
                     <div style="display:flex; justify-content:center; gap:10px;">
-                        <button class="ad-btn-styled" style="background:#4A5568; padding:10px 20px; border:none; color:white; border-radius:8px; cursor:pointer;">${t.cancel}</button>
-                        <button class="ad-btn-styled" style="background:${isSuccess ? '#38A169' : '#E53E3E'}; padding:10px 20px; border:none; color:white; border-radius:8px; cursor:pointer;">${confirmText}</button>
+                        <button class="ad-btn-styled" style="background:#4A5568; padding:10px 20px; border:none; color:white; border-radius:8px; cursor:pointer;">${esc(t.cancel)}</button>
+                        <button class="ad-btn-styled" style="background:${isSuccess ? '#38A169' : '#E53E3E'}; padding:10px 20px; border:none; color:white; border-radius:8px; cursor:pointer;">${esc(confirmText)}</button>
                     </div>
                 </div>`;
             document.body.appendChild(overlay);
@@ -112,6 +114,7 @@
                 const bOn = b.state?.connection === 'Connected' || b.state?.connected === true;
                 return bOn - aOn;
             });
+            const esc = window.adTourney.escapeHtml;
             const renderBoardBtn = (b) => {
             const isOnline = b.state?.connection === 'Connected' || b.state?.connected === true;
             const isBusy = busyBoards.includes(b.id);
@@ -126,20 +129,20 @@
             
             return `
 				<button class="board-select-btn ${isOnline && !isBusy ? '' : 'board-offline'}" 
-					data-id="${b.id}"
+					data-id="${esc(b.id)}"
 					${(!isOnline || isBusy) ? 'disabled style="cursor: not-allowed; pointer-events: none;"' : ''}>
-					<span>🎯 ${b.name}</span>
+					<span>ðŸŽ¯ ${esc(b.name)}</span>
 					<span class="board-status-tag ${tagClass}">${statusText}</span>
 				</button>`;
         };
 
             overlay.innerHTML = `
                 <div class="ad-modal-content">
-                    <div style="font-size:20px; font-weight:800; color:white; margin-bottom:15px; text-transform:uppercase;">BOARD WÄHLEN</div>
+                    <div style="font-size:20px; font-weight:800; color:white; margin-bottom:15px; text-transform:uppercase;">BOARD WÃ„HLEN</div>
                     <div style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
                         ${sortedBoards.map(b => renderBoardBtn(b)).join('')}
                     </div>
-                    <button id="cancel-board-sel" class="ad-btn-styled" style="width:100%; background:#4A5568; color:white; padding:12px; border-radius:8px; border:none; cursor:pointer; margin-top:20px;">${t.cancel}</button>
+                    <button id="cancel-board-sel" class="ad-btn-styled" style="width:100%; background:#4A5568; color:white; padding:12px; border-radius:8px; border:none; cursor:pointer; margin-top:20px;">${esc(t.cancel)}</button>
                 </div>`;
             
             document.body.appendChild(overlay);
