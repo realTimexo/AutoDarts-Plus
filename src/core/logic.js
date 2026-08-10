@@ -1,8 +1,8 @@
 (function() {
     window.adTourney = window.adTourney || {};
 
-    // Sprachsteuerung über localStorage
-    const currentLng = 'en';
+    // Sprachsteuerung über AutoDarts' eigene i18next-Spracheinstellung
+    const currentLng = window.adTourney.getLang();
     const translations = {
         'de': {
             winnerTitle: '🏆 SIEGER!',
@@ -17,9 +17,16 @@
             leagueWinnerTitle: '🏆 LEAGUE WINNER!',
             leagueWinnerText: 'has won the league!',
             superBtn: 'Great!'
+        },
+        'nl': {
+            winnerTitle: '🏆 WINNAAR!',
+            winnerText: 'heeft gewonnen!',
+            leagueWinnerTitle: '🏆 COMPETITIEWINNAAR!',
+            leagueWinnerText: 'heeft de competitie gewonnen!',
+            superBtn: 'Geweldig!'
         }
     };
-    const t = translations['en'];
+    const t = translations[currentLng] || translations['en'];
 
     /**
      * Aktualisiert die Tabellen-Statistiken basierend auf einem Match-Ergebnis
