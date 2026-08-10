@@ -1,5 +1,5 @@
 (function() {
-    const currentLng = 'en';
+    const currentLng = window.adTourney.getLang();
     const translations = {
         'de': {
             schedule: 'SPIELPLAN LIGA',
@@ -12,13 +12,19 @@
             returnRound: 'RETURN LEG LEAGUE', 
             hinBtn: 'First Leg', 
             rueckBtn: 'Return Leg'
+        },
+        'nl': {
+            schedule: 'COMPETITIESCHEMA',
+            returnRound: 'RETOURRONDE COMPETITIE',
+            hinBtn: 'Heenronde',
+            rueckBtn: 'Retourronde'
         }
     };
-    const t = translations['en'];
+    const t = translations[currentLng] || translations['en'];
 
     // Styles
     const style = document.createElement('style');
-    style.innerHTML = `
+    style.textContent = `
         .ad-league-match-header { color: #3182CE; font-weight: bold; margin-bottom: 15px; text-transform: uppercase; }
         .ad-league-match-container { display: flex; flex-wrap: wrap; gap: 15px; }
         .ad-league-section { margin-bottom: 30px; }
