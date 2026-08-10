@@ -1,6 +1,6 @@
 (function() {
-    // Sprachsteuerung über localStorage
-    const currentLng = 'en';
+    // Sprachsteuerung über AutoDarts' eigene i18next-Spracheinstellung
+    const currentLng = window.adTourney.getLang();
     const translations = {
         'de': {
             ko: 'KO',
@@ -51,12 +51,37 @@
             errorText: 'This name is already in the tournament!',
 			usePlus: 'Use Plus Subscription',
 			plusHint: 'Note: Player 1 matches count towards statistics.'
+        },
+        'nl': {
+            ko: 'KO',
+            groupsKo: 'GROEPEN + KO',
+            league: 'COMPETITIE',
+            baseScore: 'Startscore',
+            inMode: 'In-modus',
+            outMode: 'Out-modus',
+            maxRounds: 'Max rondes',
+            bullMode: 'Bull-modus',
+            bullOff: 'Bull-off',
+            gameModeLabel: 'Spelmodus: Legs (First to...)',
+            firstTo: 'First to',
+            leg: 'Leg',
+            legs: 'Legs',
+			returnMatch: 'Returnwedstrijd',
+            groupSize: 'GROEPSGROOTTE',
+            qualifiers: 'GEKWALIFICEERDEN',
+            namePlaceholder: 'NAAM...',
+            startBtn: 'Starten',
+            resetTitle: 'Setup & namen resetten',
+            errorTitle: 'NAAM BESTAAT AL',
+            errorText: 'Deze naam zit al in het toernooi!',
+			usePlus: 'Plus-abonnement gebruiken',
+			plusHint: 'Let op: wedstrijden van speler 1 tellen mee in de statistieken.'
         }
     };
-    const t = translations['en'];
+    const t = translations[currentLng] || translations['en'];
 
     const style = document.createElement('style');
-    style.innerHTML = `
+    style.textContent = `
         /* ── Setup container ─────────────────────────── */
         .ad-setup-container {
             background: rgba(255,255,255,.03);
@@ -282,7 +307,7 @@
                             <table class="player-list-table"><tbody>
                                 ${state.players.map((p, i) => `
                                     <tr class="player-list-row">
-                                        <td class="player-list-name">${p}</td>
+                                        <td class="player-list-name">${window.adTourney.escapeHtml(p)}</td>
                                         <td style="text-align:right;"><button class="remove-p remove-p-btn" data-idx="${i}">✕</button></td>
                                     </tr>`).join('')}
                             </tbody></table>
