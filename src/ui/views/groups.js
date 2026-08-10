@@ -1,6 +1,6 @@
 (function() {
-    // Sprachsteuerung über localStorage
-    const currentLng = 'en';
+    // Sprachsteuerung über AutoDarts' eigene i18next-Spracheinstellung
+    const currentLng = window.adTourney.getLang();
     const translations = {
         'de': {
 			startKo: 'KO-Phase starten',
@@ -15,13 +15,20 @@
 			returnRound: 'RETURN LEG GROUP', 
 			hinBtn: 'First Leg', 
 			rueckBtn: 'Return Leg'
+		},
+        'nl': {
+			startKo: 'START KO-FASE',
+			schedule: 'GROEPSSCHEMA',
+			returnRound: 'RETOURRONDE GROEP',
+			hinBtn: 'Heenronde',
+			rueckBtn: 'Retourronde'
 		}
     };
-    const t = translations['en'];
+    const t = translations[currentLng] || translations['en'];
 
     // Styles für Gruppen-spezifische Elemente
     const style = document.createElement('style');
-    style.innerHTML = `
+    style.textContent = `
 		.ad-group-section { margin-bottom: 30px; }
         .ad-group-match-header { color: #3182CE; font-weight: bold; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; font-size: 12px; }
         .ad-group-match-container { display: flex; flex-wrap: wrap; gap: 15px; }
