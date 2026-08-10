@@ -7,7 +7,10 @@ Autodarts +
 
 ![](https://img.shields.io/github/actions/workflow/status/realTimexo/AutoDarts-Plus/build.yml) ![](https://img.shields.io/github/v/release/realTimexo/AutoDarts-Plus) ![](https://img.shields.io/amo/v/autodarts-plus?logo=firefox&label=Firefox) ![](https://img.shields.io/amo/users/autodarts-plus?logo=firefox&label=Firefox%20Users) ![](https://img.shields.io/badge/dynamic/json?url=https://microsoftedge.microsoft.com/addons/getproductdetailsbycrxid/emckdnomcmmjiimehoiakppgmmcfagdn&query=$.version&label=Edge&logo=microsoftedge) ![](https://img.shields.io/badge/Edge-Available-blue?logo=microsoftedge)
 
+
+[![](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Gumroad-FF5E5B?logo=gumroad&logoColor=white)](https://timexo.gumroad.com/coffee)
 [![](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-PayPal-FF5E5B?logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=38GT8LH75W4GU)
+
 
 * * *
 
