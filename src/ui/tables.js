@@ -1,6 +1,6 @@
 (function() {
-    // Sprachsteuerung über localStorage
-    const currentLng = localStorage.getItem('i18nextLng') || 'en';
+    // Sprachsteuerung Ã¼ber AutoDarts' eigene i18next-Spracheinstellung
+    const currentLng = window.adTourney.getLang();
     const translations = {
         'de': {
             league: 'LIGA',
@@ -19,13 +19,22 @@
             wins: 'W',
             legs: 'LEGS',
             avg: 'AVG'
+        },
+        'nl': {
+            league: 'COMPETITIE',
+            group: 'GROEP',
+            pos: 'POS',
+            player: 'SPELER',
+            wins: 'W',
+            legs: 'LEGS',
+            avg: 'AVG'
         }
     };
-    const t = translations[currentLng.startsWith('de') ? 'de' : 'en'] || translations['en'];
+    const t = translations[currentLng] || translations['en'];
 
-    // Styles für Tabellen, Gruppen-Karten und Surrender-Buttons
+    // Styles fÃ¼r Tabellen, Gruppen-Karten und Surrender-Buttons
     const style = document.createElement('style');
-    style.innerHTML = `
+    style.textContent = `
         .groups-grid { display: flex; flex-wrap: wrap; gap: 24px; margin-bottom: 30px; width: 100%; }
         .group-card { 
             background: rgba(30, 41, 59, 0.6); 
@@ -107,7 +116,8 @@
                         const isAdv = !isLeague && advSafe.includes(p.name);
                         const isSurr = surrSafe.includes(p.name);
                         
-                        html += `<tr class="${isAdv ? 'adv-row' : ''}"><td>${globalIdx+1}</td><td style="${isSurr ? 'opacity:0.4; text-decoration:line-through;' : ''}">${p.name}${!isSurr ? `<button class="global-surrender-btn" data-name="${p.name}">🏳</button>` : ''}</td><td>${p.wins}</td><td>${p.lf}:${p.la}</td><td>${(p.totalAvg || 0).toFixed(2)}</td></tr>`; 
+                        const safeName = window.adTourney.escapeHtml(p.name);
+                        html += `<tr class="${isAdv ? 'adv-row' : ''}"><td>${globalIdx+1}</td><td style="${isSurr ? 'opacity:0.4; text-decoration:line-through;' : ''}">${safeName}${!isSurr ? `<button class="global-surrender-btn" data-name="${safeName}">ðŸ³</button>` : ''}</td><td>${p.wins}</td><td>${p.lf}:${p.la}</td><td>${(p.totalAvg || 0).toFixed(2)}</td></tr>`; 
                     });
                     
                     html += `</tbody></table></div>`;
