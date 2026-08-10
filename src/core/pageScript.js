@@ -19,7 +19,7 @@
             if (auth && auth.startsWith('Bearer ')) {
                 const token = auth.slice(7);
                 if (token.length > 20) {
-                    window.postMessage({ type: 'AD_TOKEN_CAPTURED', token }, '*');
+                    window.postMessage({ type: 'AD_TOKEN_CAPTURED', token }, window.location.origin);
                 }
             }
         } catch(e) {}
@@ -30,7 +30,7 @@
     const _origSetHeader = XMLHttpRequest.prototype.setRequestHeader;
     XMLHttpRequest.prototype.setRequestHeader = function(name, value) {
         if (name?.toLowerCase() === 'authorization' && value?.startsWith('Bearer ')) {
-            window.postMessage({ type: 'AD_TOKEN_CAPTURED', token: value.slice(7) }, '*');
+            window.postMessage({ type: 'AD_TOKEN_CAPTURED', token: value.slice(7) }, window.location.origin);
         }
         return _origSetHeader.apply(this, arguments);
     };
