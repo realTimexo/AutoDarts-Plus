@@ -1,8 +1,8 @@
 (function() {
     const { PAGE_ID } = window.adTourney.constants;
 
-    // Sprachsteuerung über localStorage
-    const currentLng = 'en';
+    // Sprachsteuerung über AutoDarts' eigene i18next-Spracheinstellung
+    const currentLng = window.adTourney.getLang();
     const translations = {
         'de': {
             tournamentTitle: 'Lokales Turnier',
@@ -65,12 +65,43 @@
             yesReset: 'Yes, reset',
 			usePlus: 'Use Plus Subscription',
 			plusHint: 'Note: Player 1 matches count towards statistics, AI recognition works.'
+        },
+        'nl': {
+            tournamentTitle: 'Lokaal Toernooi',
+            resetBtn: 'Resetten',
+            tabGroups: 'GROEPSFASE',
+            tabLeague: 'COMPETITIE',
+            tabKo: 'KO-FASE',
+            settingsTitle: 'INSTELLINGEN AANPASSEN',
+            saveBtn: 'OPSLAAN & SLUITEN',
+            gameModeLabel: 'Spelmodus: Legs (First to...)',
+            firstTo: 'First to',
+            leg: 'Leg',
+            legs: 'Legs',
+            baseScore: 'Startscore',
+            inMode: 'In-modus',
+            outMode: 'Out-modus',
+            maxRounds: 'Max rondes',
+            bullMode: 'Bull-modus',
+            bullOff: 'Bull-off',
+			returnMatch: 'Returnwedstrijd',
+			returnRound: 'RETURNRONDE',
+            surrenderTitle: 'OPGEVEN',
+            surrenderText: 'geeft op?',
+            confirm: 'Bevestigen',
+            resetMatchTitle: 'WEDSTRIJD RESETTEN?',
+            resetMatchBetween: 'Wil je de wedstrijd tussen',
+            resetMatchAnd: 'en',
+            resetMatchText: 'echt resetten? De koppeling wordt verwijderd.',
+            yesReset: 'Ja, resetten',
+			usePlus: 'Plus-abonnement gebruiken',
+			plusHint: 'Let op: wedstrijden van speler 1 tellen mee in de statistieken.'
         }
     };
-    const t = translations['en'];
+    const t = translations[currentLng] || translations['en'];
 
     const style = document.createElement('style');
-    style.innerHTML = `
+    style.textContent = `
         /* ── Layout ─────────────────────────────────── */
         #autodarts-tools-config {
             flex: 1 !important; overflow-y: auto !important;
