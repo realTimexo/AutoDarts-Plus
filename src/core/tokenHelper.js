@@ -2,8 +2,11 @@
     window.adTourney = window.adTourney || {};
 
     // Token kommt via postMessage von pageScript.js (läuft im Seiten-Kontext)
+    // event.source and event.origin are both checked so that only the
+    // same-window / same-origin pageScript can ever set the token - not
+    // some other extension or a script the page loaded from elsewhere.
     window.addEventListener('message', (event) => {
-        if (event.source === window && event.data?.type === 'AD_TOKEN_CAPTURED') {
+        if (event.source === window && event.origin === window.location.origin && event.data?.type === 'AD_TOKEN_CAPTURED') {
             window._adToken = event.data.token;
         }
     });
