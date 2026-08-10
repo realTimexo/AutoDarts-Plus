@@ -28,7 +28,15 @@
             const boardRes = await fetch('https://api.autodarts.io/bs/v0/boards', { headers });
             console.log('[AD-Lobby] Boards HTTP Status:', boardRes.status);
 
-            const boardsData = await boardRes.json();
+            if (!boardRes.ok) {
+                throw new Error(`Boards request failed (${boardRes.status})`);
+            }
+
+            // The API response body can legitimately be `null`/empty in some
+            // cases (e.g. token/session hiccups), which used to crash here
+            // with "Cannot read properties of null (reading 'data')" - guard
+            // against that instead of assuming a shape.
+            const boardsData = (await boardRes.json().catch(() => null)) || {};
             console.log('[AD-Lobby] Boards API Antwort:', boardsData);
 
             // API gibt entweder direkt ein Array oder { data: [...] } oder { boards: [...] }
@@ -65,6 +73,15 @@
             }
         } catch (err) {
             console.error('[AD-Lobby] ❌ Fehler beim Board-Laden:', err);
+            // Previously this only logged to the console, so a failure here
+            // (e.g. the boards endpoint returning something unexpected)
+            // looked to the user like nothing happened at all when they
+            // clicked "start match". Surface it instead.
+            window.adModals.show({
+                title: 'FEHLER BEIM STARTEN',
+                text: `Das Match konnte nicht gestartet werden: ${window.adTourney.escapeHtml(err.message)}`,
+                confirmText: 'OK'
+            });
         }
 
         async function performLobbyCreation(boardId) {
@@ -92,13 +109,16 @@
                 });
 
                 console.log('[AD-Lobby] Lobby erstellt, Status:', createRes.status);
-                const lobby = await createRes.json();
+                if (!createRes.ok) {
+                    throw new Error(`Lobby creation failed (${createRes.status})`);
+                }
+
+                const lobby = (await createRes.json().catch(() => null)) || {};
                 console.log('[AD-Lobby] Lobby:', lobby);
                 const lobbyId = lobby.id;
 
                 if (!lobbyId) {
-                    console.error('[AD-Lobby] ❌ Keine Lobby-ID erhalten!', lobby);
-                    return;
+                    throw new Error('No Lobby ID returned by the API');
                 }
 
                 // 2. SPIELER HINZUFÜGEN
@@ -113,8 +133,11 @@
 
                 const r1 = await addPlayer(p1Name, boardId);
                 console.log('[AD-Lobby] Spieler 1 hinzugefügt, Status:', r1.status);
+                if (!r1.ok) throw new Error(`Could not add player 1 (${r1.status})`);
+
                 const r2 = await addPlayer(p2Name, boardId);
                 console.log('[AD-Lobby] Spieler 2 hinzugefügt, Status:', r2.status);
+                if (!r2.ok) throw new Error(`Could not add player 2 (${r2.status})`);
 
                 // 3. START
                 const startRes = await fetch(`https://api.autodarts.io/gs/v0/lobbies/${lobbyId}/start`, {
@@ -122,6 +145,9 @@
                     headers
                 });
                 console.log('[AD-Lobby] Match gestartet, Status:', startRes.status);
+                if (!startRes.ok) {
+                    throw new Error(`Could not start the lobby (${startRes.status})`);
+                }
 
                 matchObj.boardId = boardId;
                 if (!state.busyBoards.includes(boardId)) state.busyBoards.push(boardId);
@@ -133,6 +159,11 @@
 
             } catch (e) {
                 console.error('[AD-Lobby] ❌ Fehler bei Lobby-Erstellung:', e);
+                window.adModals.show({
+                    title: 'FEHLER BEIM STARTEN',
+                    text: `Das Match konnte nicht gestartet werden: ${window.adTourney.escapeHtml(e.message)}`,
+                    confirmText: 'OK'
+                });
             }
         }
     };
