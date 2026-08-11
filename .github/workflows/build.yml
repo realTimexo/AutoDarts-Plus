@@ -20,11 +20,29 @@ jobs:
       - name: Install Dependencies
         run: yarn install
 
-      - name: Build Extension
-        run: yarn build
+      - name: Get Version
+        id: get_version
+        run: |
+          VERSION=$(node -p "try { require('./public/manifest.json').version } catch { require('./manifest.json').version }")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Upload Build Artifact
+      - name: Build Chrome Extension
+        run: yarn build:chrome
+
+      - name: Zip Chrome Build
+        run: |
+          mkdir -p release
+          zip -r release/AutoDarts-Plus-${{ env.VERSION }}-Chrome.zip dist/*
+
+      - name: Build Firefox Extension
+        run: yarn build:firefox
+
+      - name: Zip Firefox Build
+        run: |
+          zip -r release/AutoDarts-Plus-${{ env.VERSION }}-Firefox.zip dist/*
+
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: extension-dist
-          path: dist/
+          name: AutoDarts-Plus-Builds
+          path: release/
