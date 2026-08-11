@@ -27,7 +27,7 @@ AutoDarts + is a browser extension that enhances your experience on [autodarts.i
 
 ### 🌐 Browser Extensions
 
-*   [Microsft Add-ons](https://microsoftedge.microsoft.com/addons/detail/customize-darts-for-autod/emckdnomcmmjiimehoiakppgmmcfagdn)
+*   [Microsoft Add-ons](https://microsoftedge.microsoft.com/addons/detail/customize-darts-for-autod/emckdnomcmmjiimehoiakppgmmcfagdn)
 *   [Firefox Add-ons](https://addons.mozilla.org/de/firefox/addon/autodarts-plus)
 
 📑 Table of Contents
@@ -50,7 +50,7 @@ AutoDarts + is a browser extension that enhances your experience on [autodarts.i
 
 ### 🎨 Match Customization
 
-*   **Darts Customization**: Desing your own unique darts or import custom SVG code
+*   **Darts Customization**: Design your own unique darts or import custom SVG code
 
 ### 🎮 Gameplay Features
 
