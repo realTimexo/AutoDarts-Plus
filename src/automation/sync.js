@@ -32,7 +32,7 @@
             // Parallele Abfrage aller offenen Matches
             await Promise.all(pending.map(async (m) => {
                 try {
-                    const response = await fetch(`https://api.autodarts.io/as/v0/matches/${m.uuid}/stats`, {
+                    const response = await fetch(window._AD_API+'/as/v0/matches/'+m.uuid+'/stats', {
                         headers: { 'Authorization': `Bearer ${token}` }
                     }); //
 
