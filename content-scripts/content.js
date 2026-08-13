@@ -15,143 +15,13 @@ const PLUS_PATH      = '/autodarts-plus';
 const CUSTOMIZE_PATH = '/autodarts-plus/customize';
 const TOURNEY_PATH   = '/autodarts-plus/tournaments';
 const RANKED_PATH    = '/autodarts-plus/ranked';
-const DONATE_URL     = 'https://timexo.gumroad.com/coffee';
+const DONATE_URL     = 'https://www.paypal.com/donate/?hosted_button_id=38GT8LH75W4GU';
 const TOURNEY_DIV_ID = 'autodarts-tools-config';
-
-// ─── Übersetzungen (Hub + Customize Panel) ─────────────────────────
-// Uses the same i18next language setting as the local-tournament UI
-// (src/core/constants.js -> window.adTourney.getLang()), so the panel
-// follows whatever language AutoDarts itself is set to.
-function T() {
-    const lng = (window.adTourney && window.adTourney.getLang) ? window.adTourney.getLang() : 'en';
-    const dict = {
-        en: {
-            plusTagline: 'Enhanced features for autodarts.io',
-            donate: 'Donate',
-            custTitle: 'Customize Darts',
-            custDesc: 'Change the color and look of your dart arrows during matches. Per-part colors and custom SVG support.',
-            rankedTitle: 'Ranked',
-            rankedDesc: 'Climb from Bronze to World Master by beating bots. Track your rank, win rate and match history.',
-            tournTitle: 'Local Tournaments',
-            tournDesc: 'KO · Groups + KO · League with automatic result sync and live bracket view.',
-            exportBtn: 'Export',
-            importBtn: 'Import',
-            log: 'Log',
-            custPageTitle: 'Customize Darts',
-            custPageDesc: 'Personalize your dart arrow appearance',
-            enabled: 'Enabled',
-            disabled: 'Disabled',
-            colors: 'Colors',
-            blend: 'Blend',
-            pick: 'Pick',
-            customSvg: 'Custom SVG',
-            overridesColors: 'Overrides colors',
-            useCustom: 'Use custom',
-            svgPlaceholder: 'Paste SVG here...',
-            preview: 'Preview',
-            clear: 'Clear',
-            saveApply: 'Save & Apply',
-            savedMsg: '✓ Saved — applies on next match page.',
-            svgEmptyErr: 'Please paste SVG code first.',
-            svgInvalidErr: 'Invalid SVG.',
-            flight: 'Flight', shaft: 'Shaft', barrel: 'Barrel', point: 'Point'
-        },
-        de: {
-            plusTagline: 'Erweiterte Funktionen für autodarts.io',
-            donate: 'Spenden',
-            custTitle: 'Darts anpassen',
-            custDesc: 'Ändere Farbe und Aussehen deiner Dart-Pfeile während des Matches. Farben pro Teil und eigene SVGs möglich.',
-            rankedTitle: 'Ranked',
-            rankedDesc: 'Steige von Bronze bis World Master auf, indem du Bots besiegst. Verfolge Rang, Siegquote und Match-Verlauf.',
-            tournTitle: 'Lokale Turniere',
-            tournDesc: 'KO · Gruppen + KO · Liga mit automatischer Ergebnis-Synchronisation und Live-Turnierbaum.',
-            exportBtn: 'Exportieren',
-            importBtn: 'Importieren',
-            log: 'Protokoll',
-            custPageTitle: 'Darts anpassen',
-            custPageDesc: 'Personalisiere das Aussehen deiner Dart-Pfeile',
-            enabled: 'Aktiviert',
-            disabled: 'Deaktiviert',
-            colors: 'Farben',
-            blend: 'Verlauf',
-            pick: 'Wählen',
-            customSvg: 'Eigenes SVG',
-            overridesColors: 'Überschreibt Farben',
-            useCustom: 'Eigenes verwenden',
-            svgPlaceholder: 'SVG hier einfügen...',
-            preview: 'Vorschau',
-            clear: 'Leeren',
-            saveApply: 'Speichern & Anwenden',
-            savedMsg: '✓ Gespeichert — wird beim nächsten Match angewendet.',
-            svgEmptyErr: 'Bitte zuerst SVG-Code einfügen.',
-            svgInvalidErr: 'Ungültiges SVG.',
-            flight: 'Flight', shaft: 'Shaft', barrel: 'Barrel', point: 'Spitze'
-        },
-        nl: {
-            plusTagline: 'Uitgebreide functies voor autodarts.io',
-            donate: 'Doneren',
-            custTitle: 'Darts aanpassen',
-            custDesc: 'Verander de kleur en het uiterlijk van je dartpijlen tijdens wedstrijden. Kleuren per onderdeel en eigen SVG mogelijk.',
-            rankedTitle: 'Ranked',
-            rankedDesc: 'Klim van Brons naar World Master door bots te verslaan. Volg je rang, winratio en wedstrijdgeschiedenis.',
-            tournTitle: 'Lokale Toernooien',
-            tournDesc: 'KO · Groepen + KO · Competitie met automatische resultaatsynchronisatie en live schema.',
-            exportBtn: 'Exporteren',
-            importBtn: 'Importeren',
-            log: 'Log',
-            custPageTitle: 'Darts aanpassen',
-            custPageDesc: 'Personaliseer het uiterlijk van je dartpijlen',
-            enabled: 'Ingeschakeld',
-            disabled: 'Uitgeschakeld',
-            colors: 'Kleuren',
-            blend: 'Verloop',
-            pick: 'Kiezen',
-            customSvg: 'Eigen SVG',
-            overridesColors: 'Overschrijft kleuren',
-            useCustom: 'Eigen gebruiken',
-            svgPlaceholder: 'Plak hier SVG...',
-            preview: 'Voorbeeld',
-            clear: 'Wissen',
-            saveApply: 'Opslaan & Toepassen',
-            savedMsg: '✓ Opgeslagen — wordt toegepast bij de volgende wedstrijd.',
-            svgEmptyErr: 'Plak eerst SVG-code.',
-            svgInvalidErr: 'Ongeldige SVG.',
-            flight: 'Flight', shaft: 'Shaft', barrel: 'Barrel', point: 'Punt'
-        }
-    };
-    return dict[lng] || dict.en;
-}
 
 // ─── Dart skin ────────────────────────────────────────────────────
 const DEFAULT_COLORS = { flight:'#ffffff',shaft:'#ffffff',barrel:'#c0c0c0',point:'#d9d9d9',enabled:true,blend:false,customSvg:'',useCustomSvg:false };
 const PRESET_COLORS  = [{l:'White',h:'#ffffff'},{l:'Silver',h:'#c0c0c0'},{l:'Black',h:'#1a1a1a'},{l:'Red',h:'#e53e3e'},{l:'Blue',h:'#3182ce'},{l:'Green',h:'#38a169'},{l:'Yellow',h:'#d69e2e'},{l:'Purple',h:'#805ad5'},{l:'Orange',h:'#dd6b20'},{l:'Pink',h:'#d53f8c'},{l:'Cyan',h:'#00b5d8'},{l:'Gold',h:'#b7791f'}];
-// label is resolved at render time via T() so it follows the current language
-const PARTS          = [{key:'flight'},{key:'shaft'},{key:'barrel'},{key:'point'}];
-
-
-
-// Escapes text for safe insertion into an innerHTML template (e.g. inside a <textarea>).
-function escHtml(str) {
-  if (str === null || str === undefined) return '';
-  return String(str).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-}
-
-// Strips script-executing content from a user-pasted SVG before it is ever
-// inserted into the DOM via innerHTML (script tags, event-handler
-// attributes like onload/onclick, and javascript: URIs). This is a custom
-// "dart skin" feature where users paste arbitrary SVG markup, so it must
-// never be trusted as-is.
-function sanitizeSvg(svg) {
-  if (!svg) return svg;
-  let clean = String(svg);
-  clean = clean.replace(/<script[\s\S]*?<\/script>/gi, '');
-  clean = clean.replace(/\son\w+\s*=\s*"[^"]*"/gi, '');
-  clean = clean.replace(/\son\w+\s*=\s*'[^']*'/gi, '');
-  clean = clean.replace(/\son\w+\s*=\s*[^\s>]+/gi, '');
-  clean = clean.replace(/(href|xlink:href)\s*=\s*"(\s*javascript:[^"]*)"/gi, '$1="#"');
-  clean = clean.replace(/(href|xlink:href)\s*=\s*'(\s*javascript:[^']*)'/gi, "$1='#'");
-  return clean;
-}
+const PARTS          = [{key:'flight',label:'Flight'},{key:'shaft',label:'Shaft'},{key:'barrel',label:'Barrel'},{key:'point',label:'Point'}];
 
 function buildSvg(c) {
   if (c.useCustomSvg && c.customSvg && c.customSvg.trim()) return c.customSvg.trim();
@@ -163,60 +33,11 @@ function buildSvg(c) {
 const loadColors = () => new Promise(r => chrome.storage.local.get('dartColors', d => r(d.dartColors ? {...DEFAULT_COLORS,...d.dartColors} : {...DEFAULT_COLORS})));
 const saveColors = c => new Promise(r => chrome.storage.local.set({dartColors:c}, r));
 
-let _dartSkinObserver = null;
-let _dartSkinInterval = null;
-
 async function injectDartSkin() {
   const c = await loadColors(); if (!c.enabled) return;
   const src = 'data:image/svg+xml;utf8,' + encodeURIComponent(buildSvg(c));
-
-  // Try to find the dart images by something meaningful first (src/alt/class
-  // hints), and only fall back to "images 3,4,5 on the whole page" - the
-  // previous, sole heuristic - if that fails. The old approach silently
-  // broke whenever AutoDarts added/removed any unrelated <img> anywhere on
-  // the page (an avatar, a badge, an ad), since it shifted every index
-  // after it. This tries harder before giving up.
-  const findDartImgs = () => {
-    const bySignature = Array.from(document.querySelectorAll('img[src*="dart" i], img[alt*="dart" i], img[class*="dart" i], [class*="dart-preview" i] img, [class*="dartboard" i] img'))
-      .filter(img => img.closest('img') !== null || true); // keep simple, just dedupe below
-    if (bySignature.length >= 1 && bySignature.length <= 6) return bySignature;
-
-    const all = document.querySelectorAll('img');
-    if (all.length >= 6) return [3, 4, 5].map(i => all[i]).filter(Boolean);
-    return [];
-  };
-
-  const tryIt = () => {
-    const targets = findDartImgs();
-    if (!targets.length) return false;
-    targets.forEach(img => { if (img && img.src !== src) img.src = src; });
-    return true;
-  };
-
-  if (tryIt()) {
-    // Even after a first successful injection, AutoDarts' SPA can re-render
-    // these <img> elements later (new leg, new turn, reconnect) which
-    // silently discards our injected src. Previously the observer
-    // disconnected after the first success, so the skin only "stuck" if it
-    // happened to survive every later re-render - if not, matches quietly
-    // fell back to the default dart with no error shown, matching what was
-    // reported. Keep watching for the lifetime of this match page instead.
-  }
-
-  if (_dartSkinObserver) _dartSkinObserver.disconnect();
-  _dartSkinObserver = new MutationObserver(() => { tryIt(); });
-  _dartSkinObserver.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
-
-  if (_dartSkinInterval) clearInterval(_dartSkinInterval);
-  // Belt-and-braces poll in case a re-render doesn't trigger a MutationObserver
-  // callback we're watching for (e.g. attribute set via a framework internal
-  // that bypasses the normal DOM mutation path in some edge case).
-  _dartSkinInterval = setInterval(tryIt, 2000);
-}
-
-function stopDartSkinInjection() {
-  if (_dartSkinObserver) { _dartSkinObserver.disconnect(); _dartSkinObserver = null; }
-  if (_dartSkinInterval) { clearInterval(_dartSkinInterval); _dartSkinInterval = null; }
+  const tryIt = () => { const imgs=document.querySelectorAll('img'); if(imgs.length>=6){[3,4,5].forEach(i=>{if(imgs[i])imgs[i].src=src;});return true;} return false; };
+  if (!tryIt()) { const obs=new MutationObserver(()=>{if(tryIt())obs.disconnect();}); obs.observe(document.body,{childList:true,subtree:true}); setTimeout(()=>obs.disconnect(),10000); }
 }
 
 // ─── Ranked data ──────────────────────────────────────────────────
@@ -243,11 +64,27 @@ const RANK_ICONS={
 function getRankIcon(id,sz){sz=sz||40;return (RANK_ICONS[id]||RANK_ICONS.bronze).replace('<svg viewBox','<svg width="'+sz+'" height="'+sz+'" viewBox');}
 function rndBetween(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function applyRankChange(data,won){
-  const rank=RANKS[data.rankIndex],change=won?rndBetween(rank.winMin,rank.winMax):-rndBetween(rank.lossMin,rank.lossMax);
-  let pct=data.percentage+change,ri=data.rankIndex;
-  if(!rank.unlimited&&pct>=100&&ri<RANKS.length-1){ri++;pct=0;}
-  if(pct<0){if(ri===0)pct=0;else{ri--;pct=100+pct;if(pct<0)pct=0;}}
-  return {rankIndex:ri,percentage:pct,lastChange:change,botLevel:data.botLevel,username:data.username,matchesPlayed:(data.matchesPlayed||0)+1,wins:won?(data.wins||0)+1:(data.wins||0),losses:!won?(data.losses||0)+1:(data.losses||0),history:[{won,change,rankBeforeId:data.rankIndex,pctBefore:data.percentage,rankAfterId:ri,pctAfter:pct,date:Date.now(),botLevel:data.botLevel},...(data.history||[]).slice(0,29)]};
+  const ri0=data.rankIndex;
+  const rank=RANKS[ri0]||RANKS[0];
+  // Use current rank's own min/max — cap to prevent out-of-range values
+  const rawChange=won
+    ? rndBetween(rank.winMin,rank.winMax)
+    : -rndBetween(rank.lossMin,rank.lossMax);
+  const change=rawChange; // keep as-is for history display
+  let pct=data.percentage+change,ri=ri0;
+  // Promotion: carry over the overflow percentage into the new rank
+  if(!rank.unlimited&&pct>=100&&ri<RANKS.length-1){
+    pct=pct-100; // e.g. 98%+15%=113% → new rank at 13%
+    ri++;
+    if(pct>=100&&ri<RANKS.length-1){ri++;pct=pct-100;} // edge case: double-promote
+    if(pct<0)pct=0;
+  }
+  // Demotion: carry over the negative into the previous rank
+  if(pct<0){
+    if(ri===0){pct=0;}
+    else{ri--;pct=100+pct;if(pct<0)pct=0;}
+  }
+  return {rankIndex:ri,percentage:pct,lastChange:change,botLevel:data.botLevel,username:data.username,matchesPlayed:(data.matchesPlayed||0)+1,wins:won?(data.wins||0)+1:(data.wins||0),losses:!won?(data.losses||0)+1:(data.losses||0),history:[{won,change,rankBeforeId:ri0,pctBefore:data.percentage,rankAfterId:ri,pctAfter:pct,date:Date.now(),botLevel:data.botLevel},...(data.history||[]).slice(0,29)]};
 }
 function defaultRD(){return {rankIndex:0,percentage:0,botLevel:null,matchesPlayed:0,wins:0,losses:0,history:[],username:null};}
 const loadRanked      = () => new Promise(r=>chrome.storage.local.get(R_KEY,  d=>r(d[R_KEY]  ||defaultRD())));
@@ -257,7 +94,7 @@ const saveAM          = m  => new Promise(r=>chrome.storage.local.set({[AM_KEY]:
 const clearAM         = () => new Promise(r=>chrome.storage.local.remove(AM_KEY,r));
 
 function getTokenAsync(){return new Promise(res=>{if(window._adToken)return res(window._adToken);let t=0;const iv=setInterval(()=>{t++;if(window._adToken){clearInterval(iv);res(window._adToken);}else if(t>=80){clearInterval(iv);res(null);}},100);});}
-async function fetchUsername(token){try{const r=await fetch('https://api.autodarts.io/as/v0/users/me',{headers:{'Authorization':'Bearer '+token}});if(!r.ok)return null;const u=await r.json();return u.name||u.username||u.nick||(u.email?u.email.split('@')[0]:null)||null;}catch(e){return null;}}
+async function fetchUsername(token){try{const r=await fetch(window._AD_API+'/as/v0/users/me',{headers:{'Authorization':'Bearer '+token}});if(!r.ok)return null;const u=await r.json();return u.name||u.username||u.nick||(u.email?u.email.split('@')[0]:null)||null;}catch(e){return null;}}
 
 // ─── DOM helpers (unified) ────────────────────────────────────────
 function waitFor(sel,ms=15000){
@@ -317,7 +154,7 @@ async function startResultPolling(){
   if(pollIv)clearInterval(pollIv);
   pollIv=setInterval(async()=>{
     try{const token=window._adToken;if(!token)return;
-      const res=await fetch('https://api.autodarts.io/as/v0/matches/'+active.matchId+'/stats',{headers:{'Authorization':'Bearer '+token}});
+      const res=await fetch(window._AD_API+'/as/v0/matches/'+active.matchId+'/stats',{headers:{'Authorization':'Bearer '+token}});
       if(res.status===404||!res.ok)return;
       const data=await res.json();if(data.winner===undefined||data.winner===-1)return;
       clearInterval(pollIv);pollIv=null;document.getElementById('adr-poll-indicator')?.remove();
@@ -340,27 +177,18 @@ async function startRankedMatch(){
   if(!data.username){const n=await fetchUsername(token);if(n){data.username=n;await saveRanked(data);}}
   const username=data.username||'Player',bot=BOTS.find(b=>b.level===data.botLevel)||BOTS[0];
   try{
-    const boardsRes=await fetch('https://api.autodarts.io/bs/v0/boards',{headers});
-    if(!boardsRes.ok) throw new Error('Boards request failed ('+boardsRes.status+')');
-    // The API can return an empty/`null` body in some cases - guard against
-    // that instead of assuming a shape (this used to crash with
-    // "Cannot read properties of null (reading 'data')").
-    const boardsData=(await boardsRes.json().catch(()=>null))||{};
+    const boardsRes=await fetch(window._AD_API+'/bs/v0/boards',{headers}),boardsData=await boardsRes.json();
     const allBoards=Array.isArray(boardsData)?boardsData:(boardsData.data||boardsData.boards||boardsData.items||[]);
     const board=(allBoards.filter(b=>b.state&&(b.state.connection==='Connected'||b.state.connected===true))[0])||allBoards[0];
     if(!board){showRankedModal({title:'No Board Found',body:'No connected dartboard found.',buttons:[{label:'OK',primary:true,onClick:resetStartBtn}]});return;}
-    const createRes=await fetch('https://api.autodarts.io/gs/v0/lobbies',{method:'POST',headers,body:JSON.stringify({bullOffMode:'Normal',isPrivate:true,legs:1,settings:{baseScore:501,bullMode:'25/50',inMode:'Straight',maxRounds:50,outMode:'Double'},variant:'X01'})});
-    if(!createRes.ok) throw new Error('Lobby creation failed ('+createRes.status+')');
-    const lobby=(await createRes.json().catch(()=>null))||{};
+    const lobby=await (await fetch(window._AD_API+'/gs/v0/lobbies',{method:'POST',headers,body:JSON.stringify({bullOffMode:'Normal',isPrivate:true,legs:1,settings:{baseScore:501,bullMode:'25/50',inMode:'Straight',maxRounds:50,outMode:'Double'},variant:'X01'})})).json();
     if(!lobby.id)throw new Error('No Lobby ID');
-    const p1r=await fetch('https://api.autodarts.io/gs/v0/lobbies/'+lobby.id+'/players',{method:'POST',headers,body:JSON.stringify({name:username,boardId:board.id})});
-    if(!p1r.ok) throw new Error('Could not add player ('+p1r.status+')');
-    const p2r=await fetch('https://api.autodarts.io/gs/v0/lobbies/'+lobby.id+'/players',{method:'POST',headers,body:JSON.stringify({name:bot.name,cpuPPR:bot.avg})});
-    if(!p2r.ok) throw new Error('Could not add bot player ('+p2r.status+')');
-    const sr=await fetch('https://api.autodarts.io/gs/v0/lobbies/'+lobby.id+'/start',{method:'POST',headers});
+    await fetch(window._AD_API+'/gs/v0/lobbies/'+lobby.id+'/players',{method:'POST',headers,body:JSON.stringify({name:username,boardId:board.id})});
+    await fetch(window._AD_API+'/gs/v0/lobbies/'+lobby.id+'/players',{method:'POST',headers,body:JSON.stringify({name:bot.name,cpuPPR:bot.avg})});
+    const sr=await fetch(window._AD_API+'/gs/v0/lobbies/'+lobby.id+'/start',{method:'POST',headers});
     if(!sr.ok)throw new Error('Start failed ('+sr.status+')');
     await saveAM({matchId:lobby.id,rankIndex:data.rankIndex,percentage:data.percentage,botLevel:data.botLevel,boardId:board.id,username,startedAt:Date.now()});
-    window.location.href='https://play.autodarts.io/matches/'+lobby.id;
+    window.location.href=window._AD_PLAY+'/matches/'+lobby.id;
   }catch(err){
     // bot is already available from outer scope — no await needed here
     showRankedModal({title:'Error Starting Match',body:`Could not start the match.<br><br><code style="font-size:.72rem;color:rgba(255,255,255,.5);">${err.message}</code><br><br>Manually start a <strong>1-Leg X01-501 Double Out</strong> match vs ${bot.name} and enter your result below.`,buttons:[{label:'✅ Win',primary:false,onClick:()=>manualResult(true)},{label:'❌ Loss',primary:false,onClick:()=>manualResult(false)},{label:'Cancel',primary:true,onClick:resetStartBtn}]});
@@ -539,7 +367,6 @@ function hubCard(id,icon,ibg,ibrd,hvr,title,desc){
 
 function renderHubPage(){
   clearAllPages();const mc=getMain();if(!mc)return;hideMain();
-  const t=T();
   const pg=document.createElement('div');pg.id='adt-hub';pg.style.cssText=`display:flex;flex-direction:column;align-items:center;padding:2.5rem 1.5rem;color:white;font-family:${FONT};min-height:80vh;width:100%;box-sizing:border-box;`;
 
   const btnBase=`cursor:pointer;font-family:${FONT};font-weight:600;font-size:.78rem;border-radius:9px;padding:.5rem 1rem;display:inline-flex;align-items:center;gap:.45rem;transition:background .15s;border:1px solid;`;
@@ -549,25 +376,25 @@ function renderHubPage(){
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.85rem;margin-bottom:.5rem;">
       <div style="display:flex;align-items:center;gap:.85rem;">
         <div style="width:42px;height:42px;background:linear-gradient(135deg,rgba(49,130,206,.35),rgba(128,90,213,.35));border:1px solid rgba(255,255,255,.12);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgba(99,179,237,.9);">${PLUS_ICON}</div>
-        <div><h1 style="font-size:1.4rem;font-weight:800;margin:0;">AutoDarts <span style="color:#63b3ed;">+</span></h1><p style="margin:.1rem 0 0;font-size:.72rem;color:rgba(255,255,255,.35);">${t.plusTagline}</p></div>
+        <div><h1 style="font-size:1.4rem;font-weight:800;margin:0;">AutoDarts <span style="color:#63b3ed;">+</span></h1><p style="margin:.1rem 0 0;font-size:.72rem;color:rgba(255,255,255,.35);">Enhanced features for autodarts.io / autodarts.com</p></div>
       </div>
-      <a href="${DONATE_URL}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.4rem;background:rgba(252,129,74,.08);border:1px solid rgba(252,129,74,.2);border-radius:8px;padding:.38rem .8rem;color:#fc8181;font-size:.73rem;font-weight:600;text-decoration:none;font-family:${FONT};" onmouseover="this.style.background='rgba(252,129,74,.18)'" onmouseout="this.style.background='rgba(252,129,74,.08)'"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>${t.donate}</a>
+      <a href="${DONATE_URL}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.4rem;background:rgba(252,129,74,.08);border:1px solid rgba(252,129,74,.2);border-radius:8px;padding:.38rem .8rem;color:#fc8181;font-size:.73rem;font-weight:600;text-decoration:none;font-family:${FONT};" onmouseover="this.style.background='rgba(252,129,74,.18)'" onmouseout="this.style.background='rgba(252,129,74,.08)'"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>Donate</a>
     </div>
 
     <!-- Feature cards -->
-    ${hubCard('adt-c-cust',`<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(99,179,237,.9)"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`,'linear-gradient(135deg,rgba(49,130,206,.2),rgba(49,130,206,.08))','rgba(49,130,206,.28)','rgba(99,179,237,.3)',t.custTitle,t.custDesc)}
-    ${hubCard('adt-c-ranked',`<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(255,214,0,.9)"><path d="M12 2L13.09 8.26L20 9l-5.45 5.27L16 21l-4-2.1L8 21l1.45-6.73L4 9l6.91-.74L12 2z"/></svg>`,'linear-gradient(135deg,rgba(255,214,0,.18),rgba(255,150,0,.08))','rgba(255,214,0,.25)','rgba(255,214,0,.35)',t.rankedTitle,t.rankedDesc)}
-    ${hubCard('adt-c-tourn',`<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(104,211,145,.9)"><path d="M12 0L24 12V24H0V12L4 8V3H7V5L12 0ZM19 9h-2V7H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 19.9V22H7v2h10v-2h-4v-2.1a5.01 5.01 0 003.61-2.96C19.08 16.63 21 14.55 21 12V11c0-1.1-.9-2-2-2zM5 12V11h2v3.82C5.84 14.4 5 13.3 5 12zm14 0c0 1.3-.84 2.4-2 2.82V11h2v1z"/></svg>`,'linear-gradient(135deg,rgba(56,161,105,.2),rgba(56,161,105,.08))','rgba(56,161,105,.28)','rgba(104,211,145,.3)',t.tournTitle,t.tournDesc)}
+    ${hubCard('adt-c-cust',`<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(99,179,237,.9)"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`,'linear-gradient(135deg,rgba(49,130,206,.2),rgba(49,130,206,.08))','rgba(49,130,206,.28)','rgba(99,179,237,.3)','Customize Darts','Change the color and look of your dart arrows during matches. Per-part colors and custom SVG support.')}
+    ${hubCard('adt-c-ranked',`<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(255,214,0,.9)"><path d="M12 2L13.09 8.26L20 9l-5.45 5.27L16 21l-4-2.1L8 21l1.45-6.73L4 9l6.91-.74L12 2z"/></svg>`,'linear-gradient(135deg,rgba(255,214,0,.18),rgba(255,150,0,.08))','rgba(255,214,0,.25)','rgba(255,214,0,.35)','Ranked','Climb from Bronze to World Master by beating bots. Track your rank, win rate and match history.')}
+    ${hubCard('adt-c-tourn',`<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(104,211,145,.9)"><path d="M12 0L24 12V24H0V12L4 8V3H7V5L12 0ZM19 9h-2V7H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 19.9V22H7v2h10v-2h-4v-2.1a5.01 5.01 0 003.61-2.96C19.08 16.63 21 14.55 21 12V11c0-1.1-.9-2-2-2zM5 12V11h2v3.82C5.84 14.4 5 13.3 5 12zm14 0c0 1.3-.84 2.4-2 2.82V11h2v1z"/></svg>`,'linear-gradient(135deg,rgba(56,161,105,.2),rgba(56,161,105,.08))','rgba(56,161,105,.28)','rgba(104,211,145,.3)','Local Tournaments','KO · Groups + KO · League with automatic result sync and live bracket view.')}
 
     <!-- Import / Export row -->
     <div style="display:flex;gap:.7rem;flex-wrap:wrap;">
-      <button id="adt-hub-export" style="${btnBase}background:rgba(99,179,237,.1);border-color:rgba(99,179,237,.25);color:rgba(99,179,237,.9);flex:1;" onmouseover="this.style.background='rgba(99,179,237,.2)'" onmouseout="this.style.background='rgba(99,179,237,.1)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>${t.exportBtn}</button>
-      <button id="adt-hub-import" style="${btnBase}background:rgba(104,211,145,.1);border-color:rgba(104,211,145,.25);color:rgba(104,211,145,.9);flex:1;" onmouseover="this.style.background='rgba(104,211,145,.2)'" onmouseout="this.style.background='rgba(104,211,145,.1)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M5 15h4v6h6v-6h4l-7-7-7 7zM5 4v2h14V4H5z"/></svg>${t.importBtn}</button>
+      <button id="adt-hub-export" style="${btnBase}background:rgba(99,179,237,.1);border-color:rgba(99,179,237,.25);color:rgba(99,179,237,.9);flex:1;" onmouseover="this.style.background='rgba(99,179,237,.2)'" onmouseout="this.style.background='rgba(99,179,237,.1)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>Exportieren</button>
+      <button id="adt-hub-import" style="${btnBase}background:rgba(104,211,145,.1);border-color:rgba(104,211,145,.25);color:rgba(104,211,145,.9);flex:1;" onmouseover="this.style.background='rgba(104,211,145,.2)'" onmouseout="this.style.background='rgba(104,211,145,.1)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M5 15h4v6h6v-6h4l-7-7-7 7zM5 4v2h14V4H5z"/></svg>Importieren</button>
     </div>
 
     <!-- Log panel (hidden by default) -->
     <div id="adt-hub-logwrap" style="display:none;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1rem;">
-      <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);margin-bottom:.6rem;" id="adt-hub-logtitle">${t.log}</div>
+      <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);margin-bottom:.6rem;" id="adt-hub-logtitle">Log</div>
       <div id="adt-hub-log" style="display:flex;flex-direction:column;gap:.1rem;"></div>
       <div id="adt-hub-logactions" style="margin-top:.85rem;display:flex;gap:.6rem;"></div>
     </div>
@@ -634,39 +461,38 @@ function renderHubPage(){
 // ─── Customize ────────────────────────────────────────────────────
 function renderCustomizePage(){
   clearAllPages();const mc=getMain();if(!mc)return;hideMain();
-  const t=T();
   const pg=document.createElement('div');pg.id='adt-cust';pg.style.cssText=`display:flex;flex-direction:column;align-items:center;padding:2rem 1.5rem;color:white;font-family:${FONT};min-height:80vh;width:100%;box-sizing:border-box;`;
   const wrap=document.createElement('div');wrap.style.cssText='width:100%;max-width:600px;display:flex;flex-direction:column;gap:1rem;';
   pg.appendChild(wrap);mc.appendChild(pg);
   wrap.appendChild(backBtn('AutoDarts +',()=>{history.pushState(null,'',PLUS_PATH);renderHubPage();}));
   wrap.innerHTML+=`
     <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.65rem;">
-      <div><h1 style="font-size:1.25rem;font-weight:700;margin:0 0 .15rem;">${t.custPageTitle}</h1><p style="margin:0;font-size:.75rem;color:rgba(255,255,255,.38);">${t.custPageDesc}</p></div>
-      <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;user-select:none;"><span id="adt-en-lbl" style="font-size:.78rem;color:${liveColors.enabled?'#68d391':'rgba(255,255,255,.33)'};">${liveColors.enabled?t.enabled:t.disabled}</span>${mkTog('adt-en',liveColors.enabled,'#48bb78','23px','3px',44,24)}</label>
+      <div><h1 style="font-size:1.25rem;font-weight:700;margin:0 0 .15rem;">Customize Darts</h1><p style="margin:0;font-size:.75rem;color:rgba(255,255,255,.38);">Personalize your dart arrow appearance</p></div>
+      <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;user-select:none;"><span id="adt-en-lbl" style="font-size:.78rem;color:${liveColors.enabled?'#68d391':'rgba(255,255,255,.33)'};">${liveColors.enabled?'Enabled':'Disabled'}</span>${mkTog('adt-en',liveColors.enabled,'#48bb78','23px','3px',44,24)}</label>
     </div>
     <div style="background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:2rem 1.5rem;display:flex;align-items:center;justify-content:center;"><div id="adt-prev" style="width:100%;">${buildSvg(liveColors)}</div></div>
     <div id="adt-col-sec" style="${liveColors.useCustomSvg?'opacity:.4;pointer-events:none;':''}transition:opacity .2s;">
       <div style="background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.075);border-radius:14px;overflow:hidden;">
-        <div style="padding:.65rem 1rem;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;"><span style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);">${t.colors}</span><label style="display:flex;align-items:center;gap:.45rem;cursor:pointer;user-select:none;"><span style="font-size:.7rem;color:rgba(255,255,255,.35);">${t.blend}</span>${mkTog('adt-blend',liveColors.blend)}</label></div>
-        ${PARTS.map((p,i)=>`<div style="${i?'border-top:1px solid rgba(255,255,255,.05);':''}display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem;transition:background .12s;" onmouseover="this.style.background='rgba(255,255,255,.03)'" onmouseout="this.style.background='transparent'"><div style="display:flex;align-items:center;gap:.7rem;"><div id="adt-sw-${p.key}" style="width:30px;height:30px;border-radius:7px;background:${liveColors[p.key]};border:1px solid rgba(255,255,255,.15);flex-shrink:0;"></div><div><div style="font-weight:600;font-size:.85rem;">${t[p.key]}</div><div id="adt-hl-${p.key}" style="font-size:.68rem;color:rgba(255,255,255,.33);font-family:monospace;">${liveColors[p.key]}</div></div></div><button id="adt-pick-${p.key}" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:.3rem .75rem;color:rgba(255,255,255,.7);font-size:.72rem;font-weight:600;cursor:pointer;font-family:${FONT};transition:background .12s;" onmouseover="this.style.background='rgba(255,255,255,.12)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">${t.pick}</button></div>`).join('')}
+        <div style="padding:.65rem 1rem;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;"><span style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);">Colors</span><label style="display:flex;align-items:center;gap:.45rem;cursor:pointer;user-select:none;"><span style="font-size:.7rem;color:rgba(255,255,255,.35);">Blend</span>${mkTog('adt-blend',liveColors.blend)}</label></div>
+        ${PARTS.map((p,i)=>`<div style="${i?'border-top:1px solid rgba(255,255,255,.05);':''}display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem;transition:background .12s;" onmouseover="this.style.background='rgba(255,255,255,.03)'" onmouseout="this.style.background='transparent'"><div style="display:flex;align-items:center;gap:.7rem;"><div id="adt-sw-${p.key}" style="width:30px;height:30px;border-radius:7px;background:${liveColors[p.key]};border:1px solid rgba(255,255,255,.15);flex-shrink:0;"></div><div><div style="font-weight:600;font-size:.85rem;">${p.label}</div><div id="adt-hl-${p.key}" style="font-size:.68rem;color:rgba(255,255,255,.33);font-family:monospace;">${liveColors[p.key]}</div></div></div><button id="adt-pick-${p.key}" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:.3rem .75rem;color:rgba(255,255,255,.7);font-size:.72rem;font-weight:600;cursor:pointer;font-family:${FONT};transition:background .12s;" onmouseover="this.style.background='rgba(255,255,255,.12)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">Pick</button></div>`).join('')}
       </div>
     </div>
     <div style="background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.075);border-radius:14px;overflow:hidden;">
-      <div style="padding:.65rem 1rem;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;"><div><span style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);">${t.customSvg}</span><span style="margin-left:.5rem;font-size:.62rem;color:rgba(255,255,255,.18);">${t.overridesColors}</span></div><label style="display:flex;align-items:center;gap:.45rem;cursor:pointer;user-select:none;"><span style="font-size:.7rem;color:rgba(255,255,255,.35);">${t.useCustom}</span>${mkTog('adt-ctog',liveColors.useCustomSvg)}</label></div>
-      <div style="padding:.85rem 1rem;"><textarea id="adt-svgta" placeholder="${t.svgPlaceholder}" style="width:100%;min-height:100px;resize:vertical;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:.55rem .7rem;color:rgba(255,255,255,.8);font-family:monospace;font-size:.72rem;outline:none;box-sizing:border-box;line-height:1.5;">${escHtml(liveColors.customSvg||'')}</textarea>
-      <div style="display:flex;gap:.5rem;margin-top:.5rem;"><button id="adt-prevsvg" style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:.38rem .75rem;color:rgba(255,255,255,.7);font-size:.72rem;font-weight:600;cursor:pointer;font-family:${FONT};" onmouseover="this.style.background='rgba(255,255,255,.12)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">${t.preview}</button><button id="adt-clrsvg" style="background:rgba(255,60,60,.07);border:1px solid rgba(255,60,60,.18);border-radius:7px;padding:.38rem .75rem;color:rgba(255,120,120,.8);font-size:.72rem;font-weight:600;cursor:pointer;font-family:${FONT};" onmouseover="this.style.background='rgba(255,60,60,.14)'" onmouseout="this.style.background='rgba(255,60,60,.07)'">${t.clear}</button></div>
+      <div style="padding:.65rem 1rem;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;"><div><span style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);">Custom SVG</span><span style="margin-left:.5rem;font-size:.62rem;color:rgba(255,255,255,.18);">Overrides colors</span></div><label style="display:flex;align-items:center;gap:.45rem;cursor:pointer;user-select:none;"><span style="font-size:.7rem;color:rgba(255,255,255,.35);">Use custom</span>${mkTog('adt-ctog',liveColors.useCustomSvg)}</label></div>
+      <div style="padding:.85rem 1rem;"><textarea id="adt-svgta" placeholder="Paste SVG here..." style="width:100%;min-height:100px;resize:vertical;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:.55rem .7rem;color:rgba(255,255,255,.8);font-family:monospace;font-size:.72rem;outline:none;box-sizing:border-box;line-height:1.5;">${liveColors.customSvg||''}</textarea>
+      <div style="display:flex;gap:.5rem;margin-top:.5rem;"><button id="adt-prevsvg" style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:.38rem .75rem;color:rgba(255,255,255,.7);font-size:.72rem;font-weight:600;cursor:pointer;font-family:${FONT};" onmouseover="this.style.background='rgba(255,255,255,.12)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">Preview</button><button id="adt-clrsvg" style="background:rgba(255,60,60,.07);border:1px solid rgba(255,60,60,.18);border-radius:7px;padding:.38rem .75rem;color:rgba(255,120,120,.8);font-size:.72rem;font-weight:600;cursor:pointer;font-family:${FONT};" onmouseover="this.style.background='rgba(255,60,60,.14)'" onmouseout="this.style.background='rgba(255,60,60,.07)'">Clear</button></div>
       <div id="adt-svgerr" style="display:none;margin-top:.45rem;font-size:.7rem;color:#fc8181;padding:.38rem .6rem;background:rgba(255,80,80,.07);border-radius:6px;border:1px solid rgba(255,80,80,.18);"></div></div>
     </div>
-    <button id="adt-save" style="background:rgba(43,108,176,.8);border:none;border-radius:10px;padding:.8rem 2rem;color:white;font-weight:700;font-size:.88rem;font-family:${FONT};cursor:pointer;width:100%;transition:background .15s;" onmouseover="this.style.background='rgba(49,130,206,.9)'" onmouseout="this.style.background='rgba(43,108,176,.8)'">${t.saveApply}</button>
+    <button id="adt-save" style="background:rgba(43,108,176,.8);border:none;border-radius:10px;padding:.8rem 2rem;color:white;font-weight:700;font-size:.88rem;font-family:${FONT};cursor:pointer;width:100%;transition:background .15s;" onmouseover="this.style.background='rgba(49,130,206,.9)'" onmouseout="this.style.background='rgba(43,108,176,.8)'">Save &amp; Apply</button>
     <div id="adt-savemsg" style="display:none;text-align:center;font-size:.77rem;color:#68d391;padding:.45rem;background:rgba(72,187,120,.07);border-radius:8px;border:1px solid rgba(72,187,120,.16);"></div>`;
 
   PARTS.forEach(p=>document.getElementById('adt-pick-'+p.key)?.addEventListener('click',e=>{e.stopPropagation();openColorPicker(p.key,e.currentTarget);}));
-  const enEl=document.getElementById('adt-en');if(enEl)enEl.onchange=e=>{liveColors.enabled=e.target.checked;setTog('adt-en',liveColors.enabled,'#48bb78','23px','3px');const lb=document.getElementById('adt-en-lbl');if(lb){lb.textContent=liveColors.enabled?t.enabled:t.disabled;lb.style.color=liveColors.enabled?'#68d391':'rgba(255,255,255,.33)';}};
+  const enEl=document.getElementById('adt-en');if(enEl)enEl.onchange=e=>{liveColors.enabled=e.target.checked;setTog('adt-en',liveColors.enabled,'#48bb78','23px','3px');const lb=document.getElementById('adt-en-lbl');if(lb){lb.textContent=liveColors.enabled?'Enabled':'Disabled';lb.style.color=liveColors.enabled?'#68d391':'rgba(255,255,255,.33)';}};
   const blEl=document.getElementById('adt-blend');if(blEl)blEl.onchange=e=>{liveColors.blend=e.target.checked;setTog('adt-blend',liveColors.blend);updatePreview();};
   const ctEl=document.getElementById('adt-ctog');if(ctEl)ctEl.onchange=e=>{liveColors.useCustomSvg=e.target.checked;setTog('adt-ctog',liveColors.useCustomSvg);const cs=document.getElementById('adt-col-sec');if(cs){cs.style.opacity=liveColors.useCustomSvg?'.4':'1';cs.style.pointerEvents=liveColors.useCustomSvg?'none':'';}if(liveColors.useCustomSvg)liveColors.customSvg=document.getElementById('adt-svgta')?.value?.trim()||'';updatePreview();};
-  document.getElementById('adt-prevsvg')?.addEventListener('click',()=>{const raw=document.getElementById('adt-svgta')?.value?.trim(),err=document.getElementById('adt-svgerr');err.style.display='none';if(!raw){err.textContent=t.svgEmptyErr;err.style.display='block';return;}if(!raw.includes('<svg')){err.textContent=t.svgInvalidErr;err.style.display='block';return;}liveColors.customSvg=raw;liveColors.useCustomSvg=true;const p=document.getElementById('adt-prev');if(p)p.innerHTML=raw;const tog=document.getElementById('adt-ctog');if(tog&&!tog.checked){tog.checked=true;tog.dispatchEvent(new Event('change'));}});
+  document.getElementById('adt-prevsvg')?.addEventListener('click',()=>{const raw=document.getElementById('adt-svgta')?.value?.trim(),err=document.getElementById('adt-svgerr');err.style.display='none';if(!raw){err.textContent='Please paste SVG code first.';err.style.display='block';return;}if(!raw.includes('<svg')){err.textContent='Invalid SVG.';err.style.display='block';return;}liveColors.customSvg=raw;liveColors.useCustomSvg=true;const p=document.getElementById('adt-prev');if(p)p.innerHTML=raw;const tog=document.getElementById('adt-ctog');if(tog&&!tog.checked){tog.checked=true;tog.dispatchEvent(new Event('change'));}});
   document.getElementById('adt-clrsvg')?.addEventListener('click',()=>{const ta=document.getElementById('adt-svgta');if(ta)ta.value='';liveColors.customSvg='';liveColors.useCustomSvg=false;const tog=document.getElementById('adt-ctog');if(tog&&tog.checked){tog.checked=false;tog.dispatchEvent(new Event('change'));}document.getElementById('adt-svgerr').style.display='none';updatePreview();});
-  document.getElementById('adt-save')?.addEventListener('click',async()=>{liveColors.customSvg=document.getElementById('adt-svgta')?.value?.trim()||'';await saveColors(liveColors);const m=document.getElementById('adt-savemsg');m.textContent=t.savedMsg;m.style.display='block';setTimeout(()=>m.style.display='none',3500);});
+  document.getElementById('adt-save')?.addEventListener('click',async()=>{liveColors.customSvg=document.getElementById('adt-svgta')?.value?.trim()||'';await saveColors(liveColors);const m=document.getElementById('adt-savemsg');m.textContent='✓ Saved — applies on next match page.';m.style.display='block';setTimeout(()=>m.style.display='none',3500);});
 }
 
 // ─── Ranked pages ─────────────────────────────────────────────────
@@ -790,7 +616,6 @@ async function main(){
       else if(url.includes(PLUS_PATH)) renderHubPage();
       else clearAllPages();
       if(url.includes('/matches')){injectDartSkin();setTimeout(startResultPolling,2500);}
-      else stopDartSkinInjection();
     });
 
   } catch(e) {
