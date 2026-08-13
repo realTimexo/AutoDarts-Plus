@@ -1,8 +1,7 @@
 name: Build
 
 on:
-  push:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -32,14 +31,14 @@ jobs:
       - name: Zip Chrome Build
         run: |
           mkdir -p release
-          zip -r release/AutoDarts-Plus-${{ env.VERSION }}-Chrome.zip dist/*
+          cd dist && zip -r ../release/AutoDarts-Plus-${{ env.VERSION }}-Chrome.zip * && cd ..
 
       - name: Build Firefox Extension
         run: yarn build:firefox
 
       - name: Zip Firefox Build
         run: |
-          zip -r release/AutoDarts-Plus-${{ env.VERSION }}-Firefox.zip dist/*
+          cd dist && zip -r ../release/AutoDarts-Plus-${{ env.VERSION }}-Firefox.zip * && cd ..
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
