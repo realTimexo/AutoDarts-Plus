@@ -36,8 +36,54 @@ const saveColors = c => new Promise(r => chrome.storage.local.set({dartColors:c}
 async function injectDartSkin() {
   const c = await loadColors(); if (!c.enabled) return;
   const src = 'data:image/svg+xml;utf8,' + encodeURIComponent(buildSvg(c));
-  const tryIt = () => { const imgs=document.querySelectorAll('img'); if(imgs.length>=6){[3,4,5].forEach(i=>{if(imgs[i])imgs[i].src=src;});return true;} return false; };
-  if (!tryIt()) { const obs=new MutationObserver(()=>{if(tryIt())obs.disconnect();}); obs.observe(document.body,{childList:true,subtree:true}); setTimeout(()=>obs.disconnect(),10000); }
+
+  const tryIt = () => {
+    const allImgs = Array.from(document.querySelectorAll('img'));
+    if (!allImgs.length) return false;
+
+    // Strategy 1: dart-related attributes (works when .com uses descriptive attrs)
+    const dartImgs = allImgs.filter(img =>
+      (img.src && img.src.includes('dart')) ||
+      (img.alt && img.alt.toLowerCase().includes('dart')) ||
+      (img.className && img.className.toLowerCase().includes('dart')) ||
+      (img.closest('[class*="dart"],[id*="dart"]'))
+    );
+    if (dartImgs.length >= 3) {
+      dartImgs.slice(0, 3).forEach(img => { img.src = src; });
+      return true;
+    }
+    if (dartImgs.length > 0) {
+      dartImgs.forEach(img => { img.src = src; });
+      return true;
+    }
+
+    // Strategy 2: aspect-ratio based — dart SVG is ~4.7:1 (477x102)
+    const dartShaped = allImgs.filter(img => {
+      const w = img.naturalWidth || img.width;
+      const h = img.naturalHeight || img.height;
+      if (!w || !h) return false;
+      const ratio = w / h;
+      return ratio > 3.5 && ratio < 6.5;
+    });
+    if (dartShaped.length > 0) {
+      dartShaped.forEach(img => { img.src = src; });
+      return true;
+    }
+
+    // Strategy 3: original index-based fallback (.io DOM: imgs 3-5)
+    if (allImgs.length >= 6) {
+      [3,4,5].forEach(i => { if (allImgs[i]) allImgs[i].src = src; });
+      return true;
+    }
+
+    return false;
+  };
+
+  if (!tryIt()) {
+    const obs = new MutationObserver(() => { if (tryIt()) obs.disconnect(); });
+    obs.observe(document.body, {childList:true, subtree:true});
+    setTimeout(() => obs.disconnect(), 15000);
+  }
 }
 
 // ─── Ranked data ──────────────────────────────────────────────────
