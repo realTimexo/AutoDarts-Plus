@@ -23,15 +23,87 @@ const DEFAULT_COLORS = { flight:'#ffffff',shaft:'#ffffff',barrel:'#c0c0c0',point
 const PRESET_COLORS  = [{l:'White',h:'#ffffff'},{l:'Silver',h:'#c0c0c0'},{l:'Black',h:'#1a1a1a'},{l:'Red',h:'#e53e3e'},{l:'Blue',h:'#3182ce'},{l:'Green',h:'#38a169'},{l:'Yellow',h:'#d69e2e'},{l:'Purple',h:'#805ad5'},{l:'Orange',h:'#dd6b20'},{l:'Pink',h:'#d53f8c'},{l:'Cyan',h:'#00b5d8'},{l:'Gold',h:'#b7791f'}];
 const PARTS          = [{key:'flight',label:'Flight'},{key:'shaft',label:'Shaft'},{key:'barrel',label:'Barrel'},{key:'point',label:'Point'}];
 
+// Escapes text for safe insertion into an innerHTML template (e.g. inside
+// a <textarea>). window.adTourney.escapeHtml (constants.js) does the same
+// thing for the local-tournament UI; this local copy exists because
+// content.js is a separate, self-contained bundle.
+function escHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+// Strips script-executing content from a user-supplied SVG before it is
+// ever inserted into the DOM via innerHTML: <script> tags, event-handler
+// attributes (onload, onerror, onclick, ...), and javascript: URIs in
+// href/xlink:href. "Custom SVG" dart skins can come from three places -
+// pasted directly by the user, loaded from extension storage, or merged
+// in via Import/Export of a shared config file - and every one of those
+// is untrusted input as far as the DOM is concerned. This MUST be called
+// on customSvg before it is stored and again before every render, not
+// just once somewhere in the chain.
+//
+// Prefers window.DOMPurify.sanitize() (src/core/purify.js, loaded before
+// this file) - a real DOMParser-based sanitizer, which handles attribute-
+// context breakouts that a regex approach can't reliably catch. Falls
+// back to a regex-based clean if that's unavailable for any reason.
+function sanitizeSvg(svg) {
+  if (!svg) return svg;
+  if (window.DOMPurify && typeof window.DOMPurify.sanitize === 'function') {
+    const cleaned = window.DOMPurify.sanitize(String(svg));
+    return cleaned || '';
+  }
+  let clean = String(svg);
+  clean = clean.replace(/<script[\s\S]*?<\/script>/gi, '');
+  clean = clean.replace(/\son\w+\s*=\s*"[^"]*"/gi, '');
+  clean = clean.replace(/\son\w+\s*=\s*'[^']*'/gi, '');
+  clean = clean.replace(/\son\w+\s*=\s*[^\s>]+/gi, '');
+  clean = clean.replace(/(href|xlink:href)\s*=\s*"(\s*javascript:[^"]*)"/gi, '$1="#"');
+  clean = clean.replace(/(href|xlink:href)\s*=\s*'(\s*javascript:[^']*)'/gi, "$1='#'");
+  return clean;
+}
+
+// Validates a color value is a plain hex code before it's ever
+// interpolated into an SVG attribute (stop-color="${...}") - this is the
+// same ^#[0-9a-fA-F]{6}$ check the manual color picker already used, now
+// also applied to values coming from Import.
+function isValidHexColor(v) {
+  return typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v);
+}
+
 function buildSvg(c) {
-  if (c.useCustomSvg && c.customSvg && c.customSvg.trim()) return c.customSvg.trim();
+  if (c.useCustomSvg && c.customSvg && c.customSvg.trim()) return sanitizeSvg(c.customSvg.trim());
+  // Defense in depth: force every color through a strict hex check before
+  // it's interpolated into an SVG attribute, regardless of where it came
+  // from (manual picker, storage, or an imported config file). A value
+  // like `#fff" onload="..."` would otherwise break out of the
+  // stop-color="..." attribute.
+  const safeHex = (v, fallback) => isValidHexColor(v) ? v : fallback;
+  const flight = safeHex(c.flight, DEFAULT_COLORS.flight);
+  const shaft  = safeHex(c.shaft,  DEFAULT_COLORS.shaft);
+  const barrel = safeHex(c.barrel, DEFAULT_COLORS.barrel);
+  const point  = safeHex(c.point,  DEFAULT_COLORS.point);
   const stops = c.blend
-    ? `<stop offset="0%" stop-color="${c.flight}"/><stop offset="20%" stop-color="${c.flight}"/><stop offset="35%" stop-color="${c.shaft}"/><stop offset="55%" stop-color="${c.barrel}"/><stop offset="80%" stop-color="${c.barrel}"/><stop offset="100%" stop-color="${c.point}"/>`
-    : `<stop offset="0%" stop-color="${c.flight}"/><stop offset="20%" stop-color="${c.flight}"/><stop offset="20%" stop-color="${c.shaft}"/><stop offset="35%" stop-color="${c.shaft}"/><stop offset="35%" stop-color="${c.barrel}"/><stop offset="80%" stop-color="${c.barrel}"/><stop offset="80%" stop-color="${c.point}"/><stop offset="100%" stop-color="${c.point}"/>`;
+    ? `<stop offset="0%" stop-color="${flight}"/><stop offset="20%" stop-color="${flight}"/><stop offset="35%" stop-color="${shaft}"/><stop offset="55%" stop-color="${barrel}"/><stop offset="80%" stop-color="${barrel}"/><stop offset="100%" stop-color="${point}"/>`
+    : `<stop offset="0%" stop-color="${flight}"/><stop offset="20%" stop-color="${flight}"/><stop offset="20%" stop-color="${shaft}"/><stop offset="35%" stop-color="${shaft}"/><stop offset="35%" stop-color="${barrel}"/><stop offset="80%" stop-color="${barrel}"/><stop offset="80%" stop-color="${point}"/><stop offset="100%" stop-color="${point}"/>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 477 102"><defs><linearGradient id="dg" x1="0" y1="0" x2="477" y2="0" gradientUnits="userSpaceOnUse">${stops}</linearGradient></defs><path fill="url(#dg)" d="M26.56.5h53.65l.14.11,55.78,45,42.2-.07,42.49.07c.95-.56,6.88-4,10.06-4h152.73c2.11,0,4.43.36,6.9,1.07,1.96.56,4.03,1.35,6.13,2.34,3.16,1.48,5.42,2.94,5.98,3.31,2.04,0,23.83-.1,40.68-.1,10.34,0,16.83.03,19.29.1,5.75.16,13.13,1.98,13.95,2.19h.02s-.12.48-.12.48h0s.12.5.12.5h-.02c-.82.21-8.2,2.02-13.95,2.19-2.45.07-8.94.1-19.29.1-16.85,0-38.64-.09-40.68-.1-.56.37-2.82,1.83-5.98,3.31-3.32,1.55-8.27,3.41-13.03,3.41h-152.73c-3.19,0-9.11-3.44-10.06-4l-42.49.07-42.2-.07-55.78,45-.14.11H26.56l-.14-.27L1,51.23l-.12-.23.12-.23L26.43.77l.14-.27Z"/></svg>`;
 }
-const loadColors = () => new Promise(r => chrome.storage.local.get('dartColors', d => r(d.dartColors ? {...DEFAULT_COLORS,...d.dartColors} : {...DEFAULT_COLORS})));
+const loadColors = () => new Promise(r => chrome.storage.local.get('dartColors', d => {
+  const merged = d.dartColors ? {...DEFAULT_COLORS, ...d.dartColors} : {...DEFAULT_COLORS};
+  // Defense in depth: sanitize on the way OUT of storage too, not just
+  // going in - catches anything that was saved before this fix existed,
+  // or by any code path that doesn't go through the sanitized save/import
+  // handlers above.
+  if (merged.customSvg) merged.customSvg = sanitizeSvg(merged.customSvg);
+  if (!isValidHexColor(merged.flight)) merged.flight = DEFAULT_COLORS.flight;
+  if (!isValidHexColor(merged.shaft))  merged.shaft  = DEFAULT_COLORS.shaft;
+  if (!isValidHexColor(merged.barrel)) merged.barrel = DEFAULT_COLORS.barrel;
+  if (!isValidHexColor(merged.point))  merged.point  = DEFAULT_COLORS.point;
+  r(merged);
+}));
 const saveColors = c => new Promise(r => chrome.storage.local.set({dartColors:c}, r));
+
+let _dartSkinObserver = null;
+let _dartSkinInterval = null;
 
 async function injectDartSkin() {
   const c = await loadColors(); if (!c.enabled) return;
@@ -79,11 +151,26 @@ async function injectDartSkin() {
     return false;
   };
 
-  if (!tryIt()) {
-    const obs = new MutationObserver(() => { if (tryIt()) obs.disconnect(); });
-    obs.observe(document.body, {childList:true, subtree:true});
-    setTimeout(() => obs.disconnect(), 15000);
-  }
+  if (_dartSkinObserver) _dartSkinObserver.disconnect();
+  if (_dartSkinInterval) clearInterval(_dartSkinInterval);
+
+  tryIt();
+  // Keep watching for the lifetime of this match page instead of
+  // disconnecting after the first success. AutoDarts' SPA can re-render
+  // these <img> elements later (new leg, new turn, reconnect), which
+  // silently discards the injected src - previously the skin only "stuck"
+  // if it happened to survive every later re-render; if not, the match
+  // quietly fell back to the default dart with no error shown.
+  _dartSkinObserver = new MutationObserver(() => { tryIt(); });
+  _dartSkinObserver.observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['src']});
+  // Belt-and-braces poll in case a re-render doesn't trigger a
+  // MutationObserver callback for src changes we're watching for.
+  _dartSkinInterval = setInterval(tryIt, 2000);
+}
+
+function stopDartSkinInjection() {
+  if (_dartSkinObserver) { _dartSkinObserver.disconnect(); _dartSkinObserver = null; }
+  if (_dartSkinInterval) { clearInterval(_dartSkinInterval); _dartSkinInterval = null; }
 }
 
 // ─── Ranked data ──────────────────────────────────────────────────
@@ -394,7 +481,22 @@ async function runImport(json, logEl){
 
   // ── Customize Darts ──
   if(data.customizeDarts){
-    const merged = {...DEFAULT_COLORS, ...data.customizeDarts};
+    // Import comes from an arbitrary, possibly attacker-crafted JSON file
+    // (that's the whole point of Import/Export - sharing configs between
+    // users). Never trust it as-is: validate every color as a plain hex
+    // code and sanitize customSvg before it's stored, not just before
+    // it's rendered - storage is itself a place other code paths read
+    // from without necessarily re-sanitizing.
+    const incoming = data.customizeDarts;
+    const merged = {
+      ...DEFAULT_COLORS,
+      ...incoming,
+      flight: isValidHexColor(incoming.flight) ? incoming.flight : DEFAULT_COLORS.flight,
+      shaft:  isValidHexColor(incoming.shaft)  ? incoming.shaft  : DEFAULT_COLORS.shaft,
+      barrel: isValidHexColor(incoming.barrel) ? incoming.barrel : DEFAULT_COLORS.barrel,
+      point:  isValidHexColor(incoming.point)  ? incoming.point  : DEFAULT_COLORS.point,
+      customSvg: incoming.customSvg ? sanitizeSvg(String(incoming.customSvg).trim()) : ''
+    };
     await saveColors(merged);
     liveColors = merged;
     addLog(logEl, `Customize Darts importiert — Enabled: ${merged.enabled}, Blend: ${merged.blend}, Custom SVG: ${merged.useCustomSvg?'aktiv':'inaktiv'}`, 'ok');
@@ -525,7 +627,7 @@ function renderCustomizePage(){
     </div>
     <div style="background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.075);border-radius:14px;overflow:hidden;">
       <div style="padding:.65rem 1rem;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;"><div><span style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);">Custom SVG</span><span style="margin-left:.5rem;font-size:.62rem;color:rgba(255,255,255,.18);">Overrides colors</span></div><label style="display:flex;align-items:center;gap:.45rem;cursor:pointer;user-select:none;"><span style="font-size:.7rem;color:rgba(255,255,255,.35);">Use custom</span>${mkTog('adt-ctog',liveColors.useCustomSvg)}</label></div>
-      <div style="padding:.85rem 1rem;"><textarea id="adt-svgta" placeholder="Paste SVG here..." style="width:100%;min-height:100px;resize:vertical;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:.55rem .7rem;color:rgba(255,255,255,.8);font-family:monospace;font-size:.72rem;outline:none;box-sizing:border-box;line-height:1.5;">${liveColors.customSvg||''}</textarea>
+      <div style="padding:.85rem 1rem;"><textarea id="adt-svgta" placeholder="Paste SVG here..." style="width:100%;min-height:100px;resize:vertical;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:.55rem .7rem;color:rgba(255,255,255,.8);font-family:monospace;font-size:.72rem;outline:none;box-sizing:border-box;line-height:1.5;">${escHtml(liveColors.customSvg||'')}</textarea>
       <div style="display:flex;gap:.5rem;margin-top:.5rem;"><button id="adt-prevsvg" style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:.38rem .75rem;color:rgba(255,255,255,.7);font-size:.72rem;font-weight:600;cursor:pointer;font-family:${FONT};" onmouseover="this.style.background='rgba(255,255,255,.12)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">Preview</button><button id="adt-clrsvg" style="background:rgba(255,60,60,.07);border:1px solid rgba(255,60,60,.18);border-radius:7px;padding:.38rem .75rem;color:rgba(255,120,120,.8);font-size:.72rem;font-weight:600;cursor:pointer;font-family:${FONT};" onmouseover="this.style.background='rgba(255,60,60,.14)'" onmouseout="this.style.background='rgba(255,60,60,.07)'">Clear</button></div>
       <div id="adt-svgerr" style="display:none;margin-top:.45rem;font-size:.7rem;color:#fc8181;padding:.38rem .6rem;background:rgba(255,80,80,.07);border-radius:6px;border:1px solid rgba(255,80,80,.18);"></div></div>
     </div>
@@ -536,9 +638,9 @@ function renderCustomizePage(){
   const enEl=document.getElementById('adt-en');if(enEl)enEl.onchange=e=>{liveColors.enabled=e.target.checked;setTog('adt-en',liveColors.enabled,'#48bb78','23px','3px');const lb=document.getElementById('adt-en-lbl');if(lb){lb.textContent=liveColors.enabled?'Enabled':'Disabled';lb.style.color=liveColors.enabled?'#68d391':'rgba(255,255,255,.33)';}};
   const blEl=document.getElementById('adt-blend');if(blEl)blEl.onchange=e=>{liveColors.blend=e.target.checked;setTog('adt-blend',liveColors.blend);updatePreview();};
   const ctEl=document.getElementById('adt-ctog');if(ctEl)ctEl.onchange=e=>{liveColors.useCustomSvg=e.target.checked;setTog('adt-ctog',liveColors.useCustomSvg);const cs=document.getElementById('adt-col-sec');if(cs){cs.style.opacity=liveColors.useCustomSvg?'.4':'1';cs.style.pointerEvents=liveColors.useCustomSvg?'none':'';}if(liveColors.useCustomSvg)liveColors.customSvg=document.getElementById('adt-svgta')?.value?.trim()||'';updatePreview();};
-  document.getElementById('adt-prevsvg')?.addEventListener('click',()=>{const raw=document.getElementById('adt-svgta')?.value?.trim(),err=document.getElementById('adt-svgerr');err.style.display='none';if(!raw){err.textContent='Please paste SVG code first.';err.style.display='block';return;}if(!raw.includes('<svg')){err.textContent='Invalid SVG.';err.style.display='block';return;}liveColors.customSvg=raw;liveColors.useCustomSvg=true;const p=document.getElementById('adt-prev');if(p)p.innerHTML=raw;const tog=document.getElementById('adt-ctog');if(tog&&!tog.checked){tog.checked=true;tog.dispatchEvent(new Event('change'));}});
+  document.getElementById('adt-prevsvg')?.addEventListener('click',()=>{const raw=document.getElementById('adt-svgta')?.value?.trim(),err=document.getElementById('adt-svgerr');err.style.display='none';if(!raw){err.textContent='Please paste SVG code first.';err.style.display='block';return;}if(!raw.includes('<svg')){err.textContent='Invalid SVG.';err.style.display='block';return;}const clean=sanitizeSvg(raw);liveColors.customSvg=clean;liveColors.useCustomSvg=true;const p=document.getElementById('adt-prev');if(p)p.innerHTML=clean;const tog=document.getElementById('adt-ctog');if(tog&&!tog.checked){tog.checked=true;tog.dispatchEvent(new Event('change'));}});
   document.getElementById('adt-clrsvg')?.addEventListener('click',()=>{const ta=document.getElementById('adt-svgta');if(ta)ta.value='';liveColors.customSvg='';liveColors.useCustomSvg=false;const tog=document.getElementById('adt-ctog');if(tog&&tog.checked){tog.checked=false;tog.dispatchEvent(new Event('change'));}document.getElementById('adt-svgerr').style.display='none';updatePreview();});
-  document.getElementById('adt-save')?.addEventListener('click',async()=>{liveColors.customSvg=document.getElementById('adt-svgta')?.value?.trim()||'';await saveColors(liveColors);const m=document.getElementById('adt-savemsg');m.textContent='✓ Saved — applies on next match page.';m.style.display='block';setTimeout(()=>m.style.display='none',3500);});
+  document.getElementById('adt-save')?.addEventListener('click',async()=>{liveColors.customSvg=sanitizeSvg(document.getElementById('adt-svgta')?.value?.trim()||'');await saveColors(liveColors);const m=document.getElementById('adt-savemsg');m.textContent='✓ Saved — applies on next match page.';m.style.display='block';setTimeout(()=>m.style.display='none',3500);});
 }
 
 // ─── Ranked pages ─────────────────────────────────────────────────
@@ -662,6 +764,7 @@ async function main(){
       else if(url.includes(PLUS_PATH)) renderHubPage();
       else clearAllPages();
       if(url.includes('/matches')){injectDartSkin();setTimeout(startResultPolling,2500);}
+      else stopDartSkinInjection();
     });
 
   } catch(e) {
