@@ -1,5 +1,5 @@
 name: 🐛 Bug Report
-description: Report a bug or issue with Tools for Autodarts
+description: Report a bug or issue
 title: "[BUG] "
 labels: ["bug"]
 assignees: []
@@ -52,9 +52,9 @@ body:
   - type: input
     id: extension_version
     attributes:
-      label: Tools for Autodarts Version
-      description: What version of Tools for Autodarts do you have installed? (Check in your browser's extension settings)
-      placeholder: "e.g., 2.2.5"
+      label: Autodarts + Version
+      description: What version of Autodarts + do you have installed? (Check in your browser's extension settings)
+      placeholder: "e.g., 1.2.4"
     validations:
       required: true
 
