@@ -502,7 +502,7 @@
             const idx = btn.dataset.idx;
             const type = btn.dataset.type;
             const m = type === 'league' ? state.leagueMatches[idx] : (type === 'ko' ? state.matches[idx] : state.groupMatches[idx]);
-            if (m.uuid) window.location.href = `https://play.autodarts.io/matches/${m.uuid}`;
+            if (m.uuid) window.location.href = `${window._AD_PLAY}/matches/${m.uuid}`;
             else window.adTourney.startMatchDirectly(m.p1, m.p2, m);
         });
     }
