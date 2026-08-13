@@ -1,13 +1,6 @@
 // Läuft in MAIN world bei document_start — VOR dem Autodarts-Code
 // Fängt fetch ab und schickt Token per postMessage an tokenHelper.js
 (function() {
-    // ── getLang stub: autodarts.com's own JS calls window.adTourney.getLang()
-    // We create the namespace first, so their code doesn't crash.
-    // Their code will overwrite getLang with the real one when it loads.
-    window.adTourney = window.adTourney || {};
-    if (typeof window.adTourney.getLang !== 'function') {
-        window.adTourney.getLang = function(key) { return key || ''; };
-    }
 
     // ── Token capture via fetch ──────────────────────────────────────
     const _origFetch = window.fetch;
