@@ -156,15 +156,28 @@ async function injectDartSkin() {
 
   tryIt();
   // Keep watching for the lifetime of this match page instead of
-  // disconnecting after the first success. AutoDarts' SPA can re-render
-  // these <img> elements later (new leg, new turn, reconnect), which
-  // silently discards the injected src - previously the skin only "stuck"
-  // if it happened to survive every later re-render; if not, the match
-  // quietly fell back to the default dart with no error shown.
-  _dartSkinObserver = new MutationObserver(() => { tryIt(); });
-  _dartSkinObserver.observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['src']});
-  // Belt-and-braces poll in case a re-render doesn't trigger a
-  // MutationObserver callback for src changes we're watching for.
+  // disconnecting after the first success, so the skin survives a later
+  // re-render (new leg, new turn, reconnect) instead of silently
+  // disappearing. IMPORTANT: only watch childList/subtree (elements being
+  // added/removed), NOT attributes - watching `attributes:true` on the
+  // whole document.body during a live match caused a severe performance
+  // problem: AutoDarts' own live camera/score UI mutates DOM attributes
+  // extremely frequently during an active throw, so an attribute-level
+  // observer on the whole body fired constantly and made the entire tab
+  // unresponsive (no clicks registering, throws not counting, endless
+  // loading spinner). childList mutations (elements appearing/
+  // disappearing) are far rarer, and the callback itself is debounced on
+  // top of that so a burst of mutations only triggers one check.
+  let _debounceTimer = null;
+  _dartSkinObserver = new MutationObserver(() => {
+    if (_debounceTimer) return;
+    _debounceTimer = setTimeout(() => { _debounceTimer = null; tryIt(); }, 250);
+  });
+  _dartSkinObserver.observe(document.body, {childList:true, subtree:true});
+  // Belt-and-braces poll (cheap - just a few querySelectorAll calls every
+  // 2s) in case a re-render doesn't trigger a childList mutation we'd
+  // catch above (e.g. the dart <img> src gets reset in place without the
+  // element itself being replaced).
   _dartSkinInterval = setInterval(tryIt, 2000);
 }
 
