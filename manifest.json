@@ -4,13 +4,6 @@
   "version": "1.2.4",
   "description": "Dart skin customizer, ranked mode and local tournaments for play.autodarts.io / play.autodarts.com",
 
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "customize-darts@timexo.io",
-      "strict_min_version": "111.0"
-    }
-  },
-
   "permissions": ["storage"],
   "host_permissions": [
     "https://play.autodarts.io/*",
