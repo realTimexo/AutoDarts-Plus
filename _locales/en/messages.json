@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "AutoDarts +",
+    "description": "Extension name shown in the browser toolbar and store listing."
+  },
+  "extDescription": {
+    "message": "Dart skin customizer, ranked mode and local tournaments for play.autodarts.io / play.autodarts.com",
+    "description": "Short store listing description."
+  }
+}
