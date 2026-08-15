@@ -753,6 +753,24 @@ function dispatchKey(code, key, keyCode) {
   const target = document.activeElement && document.activeElement !== document.body ? document.activeElement : document;
   target.dispatchEvent(new KeyboardEvent('keydown', opts));
   target.dispatchEvent(new KeyboardEvent('keyup', opts));
+  // Space (and Enter) activating a focused button is native browser
+  // behavior tied to a *trusted* (real, physical) key event - a
+  // synthetic KeyboardEvent never triggers it, even though any JS
+  // keydown listener on the page still sees and can react to it just
+  // fine. That's exactly why "Back" (a page-side JS listener reacting to
+  // Backspace) works but "Next Player" didn't: if that button relies on
+  // the browser's native "focused button + Space = click" behavior
+  // instead of its own JS listener, nothing happens unless we click it
+  // ourselves. So: if the currently focused element looks like a
+  // button, click it directly too - this is exactly what a real
+  // spacebar press would have done to it.
+  if (code === 'Space' && target instanceof HTMLElement && typeof target.click === 'function') {
+    const tag = target.tagName.toLowerCase();
+    const role = target.getAttribute && target.getAttribute('role');
+    if (tag === 'button' || tag === 'a' || tag === 'input' || role === 'button') {
+      target.click();
+    }
+  }
 }
 
 async function triggerCalibrate() {
