@@ -132,7 +132,6 @@ Give a star if this project helped you.
 
 🎯 [Autodarts](https://autodarts.io) - The original platform this extension enhances  
 🎨 Alex - Actual creator of the tournaments
-
 🪛 [Tools for Autodarts](https://github.com/creazy231/tools-for-autodarts/) - Inspiration for the project
 
 📄 License
