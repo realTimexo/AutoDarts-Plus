@@ -15,8 +15,56 @@ const PLUS_PATH      = '/autodarts-plus';
 const CUSTOMIZE_PATH = '/autodarts-plus/customize';
 const TOURNEY_PATH   = '/autodarts-plus/tournaments';
 const RANKED_PATH    = '/autodarts-plus/ranked';
-const DONATE_URL     = 'https://www.paypal.com/donate/?hosted_button_id=38GT8LH75W4GU';
+const SHORTCUTS_PATH = '/autodarts-plus/shortcuts';
+const DONATE_URL     = 'https://timexo.gumroad.com/coffee';
 const TOURNEY_DIV_ID = 'autodarts-tools-config';
+const STORE_LINKS = {
+  edge:    'https://microsoftedge.microsoft.com/addons/detail/autodarts-/emckdnomcmmjiimehoiakppgmmcfagdn',
+  firefox: 'https://addons.mozilla.org/firefox/addon/autodarts-plus/',
+  github:  'https://github.com/realTimexo/AutoDarts-Plus/releases'
+};
+
+// ─── Übersetzungen (nur für neuere Panel-Teile, die dieses Format nutzen) ──
+function T() {
+    const lng = (window.adTourney && window.adTourney.getLang) ? window.adTourney.getLang() : 'en';
+    const dict = {
+        en: {
+            scTitle: 'Shortcuts',
+            scDesc: 'Bind a keyboard key to trigger an action while you\'re on a match or menu page.',
+            scNextPlayer: 'Next Player',
+            scNextPlayerDesc: 'Presses AutoDarts\' own "confirm / next player" key (Space) for you.',
+            scBack: 'Back',
+            scBackDesc: 'Presses AutoDarts\' own "back" key (Backspace) for you.',
+            scCalibrate: 'Calibrate',
+            scCalibrateDesc: 'Triggers auto-calibration on your local board software.',
+            scListening: 'Press a key… (Esc to cancel)'
+        },
+        de: {
+            scTitle: 'Tastenkürzel',
+            scDesc: 'Verknüpfe eine Taste mit einer Aktion, während du auf einer Match- oder Menüseite bist.',
+            scNextPlayer: 'Nächster Spieler',
+            scNextPlayerDesc: 'Drückt für dich AutoDarts\' eigene "Bestätigen / Nächster Spieler"-Taste (Leertaste).',
+            scBack: 'Zurück',
+            scBackDesc: 'Drückt für dich AutoDarts\' eigene "Zurück"-Taste (Rücktaste).',
+            scCalibrate: 'Kalibrieren',
+            scCalibrateDesc: 'Startet die Auto-Kalibrierung auf deiner lokalen Board-Software.',
+            scListening: 'Taste drücken… (Esc zum Abbrechen)'
+        },
+        nl: {
+            scTitle: 'Sneltoetsen',
+            scDesc: 'Koppel een toets aan een actie terwijl je op een wedstrijd- of menupagina bent.',
+            scNextPlayer: 'Volgende speler',
+            scNextPlayerDesc: 'Drukt voor jou op AutoDarts\' eigen "bevestigen / volgende speler"-toets (spatie).',
+            scBack: 'Terug',
+            scBackDesc: 'Drukt voor jou op AutoDarts\' eigen "terug"-toets (backspace).',
+            scCalibrate: 'Kalibreren',
+            scCalibrateDesc: 'Start automatische kalibratie op je lokale boardsoftware.',
+            scListening: 'Druk op een toets… (Esc om te annuleren)'
+        }
+    };
+    return dict[lng] || dict.en;
+}
+
 
 // ─── Dart skin ────────────────────────────────────────────────────
 const DEFAULT_COLORS = { flight:'#ffffff',shaft:'#ffffff',barrel:'#c0c0c0',point:'#d9d9d9',enabled:true,blend:false,customSvg:'',useCustomSvg:false };
@@ -254,7 +302,7 @@ const getMain=()=>document.querySelector('#root > div > div:nth-of-type(2)');
 function hideMain(){const m=getMain();if(!m)return;Array.from(m.children).forEach(c=>{const id=c.id||'';if(!id.startsWith('adt-')&&!id.startsWith('adr-')&&id!==TOURNEY_DIV_ID)c.style.display='none';});}
 function showMain(){const m=getMain();if(!m)return;Array.from(m.children).forEach(c=>c.style.display='');}
 function clearAllPages(){
-  ['adt-hub','adt-cust','adt-tourn','adr-page'].forEach(id=>document.getElementById(id)?.remove());
+  ['adt-hub','adt-cust','adt-tourn','adr-page','adt-shortcuts'].forEach(id=>document.getElementById(id)?.remove());
   document.getElementById('adt-picker')?.remove();
   const td=document.getElementById(TOURNEY_DIV_ID);if(td&&!td.closest('#adt-tourn'))td.remove();
   activePart=null; showMain();
@@ -546,6 +594,7 @@ function renderHubPage(){
     ${hubCard('adt-c-cust',`<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(99,179,237,.9)"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`,'linear-gradient(135deg,rgba(49,130,206,.2),rgba(49,130,206,.08))','rgba(49,130,206,.28)','rgba(99,179,237,.3)','Customize Darts','Change the color and look of your dart arrows during matches. Per-part colors and custom SVG support.')}
     ${hubCard('adt-c-ranked',`<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(255,214,0,.9)"><path d="M12 2L13.09 8.26L20 9l-5.45 5.27L16 21l-4-2.1L8 21l1.45-6.73L4 9l6.91-.74L12 2z"/></svg>`,'linear-gradient(135deg,rgba(255,214,0,.18),rgba(255,150,0,.08))','rgba(255,214,0,.25)','rgba(255,214,0,.35)','Ranked','Climb from Bronze to World Master by beating bots. Track your rank, win rate and match history.')}
     ${hubCard('adt-c-tourn',`<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(104,211,145,.9)"><path d="M12 0L24 12V24H0V12L4 8V3H7V5L12 0ZM19 9h-2V7H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 19.9V22H7v2h10v-2h-4v-2.1a5.01 5.01 0 003.61-2.96C19.08 16.63 21 14.55 21 12V11c0-1.1-.9-2-2-2zM5 12V11h2v3.82C5.84 14.4 5 13.3 5 12zm14 0c0 1.3-.84 2.4-2 2.82V11h2v1z"/></svg>`,'linear-gradient(135deg,rgba(56,161,105,.2),rgba(56,161,105,.08))','rgba(56,161,105,.28)','rgba(104,211,145,.3)','Local Tournaments','KO · Groups + KO · League with automatic result sync and live bracket view.')}
+    ${hubCard('adt-c-shortcuts',`<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(159,122,234,.9)"><path d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zM11 8h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg>`,'linear-gradient(135deg,rgba(159,122,234,.2),rgba(159,122,234,.08))','rgba(159,122,234,.28)','rgba(159,122,234,.3)','Shortcuts','Bind keyboard keys to Next Player, Back and Calibrate while you play.')}
 
     <!-- Import / Export row -->
     <div style="display:flex;gap:.7rem;flex-wrap:wrap;">
@@ -568,6 +617,31 @@ function renderHubPage(){
   pg.querySelector('#adt-c-cust').onclick=async()=>{liveColors=await loadColors();history.pushState(null,'',CUSTOMIZE_PATH);renderCustomizePage();};
   pg.querySelector('#adt-c-ranked').onclick=()=>{history.pushState(null,'',RANKED_PATH);renderRankedPage();};
   pg.querySelector('#adt-c-tourn').onclick=()=>{history.pushState(null,'',TOURNEY_PATH);renderTournamentPage();};
+  pg.querySelector('#adt-c-shortcuts').onclick=()=>{history.pushState(null,'',SHORTCUTS_PATH);renderShortcutsPage();};
+
+  // ── Update banner ──
+  // Populated from chrome.storage.local (written by src/core/background.js,
+  // which does the actual GitHub API check - a content script's fetch() is
+  // still subject to the page's CSP, a background service worker isn't).
+  chrome.storage.local.get('adUpdateInfo', (d) => {
+    const info = d.adUpdateInfo;
+    if (!info || !info.available) return;
+    const wrapEl = pg.querySelector('div');
+    if (!wrapEl) return;
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:rgba(99,179,237,.1);border:1px solid rgba(99,179,237,.28);border-radius:12px;padding:.9rem 1.1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;';
+    banner.innerHTML = `
+      <div>
+        <div style="font-weight:700;font-size:.85rem;color:#63b3ed;">Update available: v${escHtml(info.latest)}</div>
+        <div style="font-size:.72rem;color:rgba(255,255,255,.45);margin-top:.15rem;">You're on v${escHtml(info.installed)}. Pick where you installed this extension from:</div>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+        <a href="${STORE_LINKS.edge}" target="_blank" rel="noopener" style="background:rgba(99,179,237,.15);border:1px solid rgba(99,179,237,.3);border-radius:7px;padding:.4rem .75rem;color:#63b3ed;font-size:.72rem;font-weight:700;text-decoration:none;font-family:${FONT};">Edge</a>
+        <a href="${STORE_LINKS.firefox}" target="_blank" rel="noopener" style="background:rgba(255,159,10,.12);border:1px solid rgba(255,159,10,.3);border-radius:7px;padding:.4rem .75rem;color:#ff9f0a;font-size:.72rem;font-weight:700;text-decoration:none;font-family:${FONT};">Firefox</a>
+        <a href="${STORE_LINKS.github}" target="_blank" rel="noopener" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:7px;padding:.4rem .75rem;color:white;font-size:.72rem;font-weight:700;text-decoration:none;font-family:${FONT};">GitHub</a>
+      </div>`;
+    wrapEl.insertBefore(banner, wrapEl.firstChild);
+  });
 
   // ── Export ──
   pg.querySelector('#adt-hub-export').onclick=async()=>{
@@ -654,6 +728,146 @@ function renderCustomizePage(){
   document.getElementById('adt-prevsvg')?.addEventListener('click',()=>{const raw=document.getElementById('adt-svgta')?.value?.trim(),err=document.getElementById('adt-svgerr');err.style.display='none';if(!raw){err.textContent='Please paste SVG code first.';err.style.display='block';return;}if(!raw.includes('<svg')){err.textContent='Invalid SVG.';err.style.display='block';return;}const clean=sanitizeSvg(raw);liveColors.customSvg=clean;liveColors.useCustomSvg=true;const p=document.getElementById('adt-prev');if(p)p.innerHTML=clean;const tog=document.getElementById('adt-ctog');if(tog&&!tog.checked){tog.checked=true;tog.dispatchEvent(new Event('change'));}});
   document.getElementById('adt-clrsvg')?.addEventListener('click',()=>{const ta=document.getElementById('adt-svgta');if(ta)ta.value='';liveColors.customSvg='';liveColors.useCustomSvg=false;const tog=document.getElementById('adt-ctog');if(tog&&tog.checked){tog.checked=false;tog.dispatchEvent(new Event('change'));}document.getElementById('adt-svgerr').style.display='none';updatePreview();});
   document.getElementById('adt-save')?.addEventListener('click',async()=>{liveColors.customSvg=sanitizeSvg(document.getElementById('adt-svgta')?.value?.trim()||'');await saveColors(liveColors);const m=document.getElementById('adt-savemsg');m.textContent='✓ Saved — applies on next match page.';m.style.display='block';setTimeout(()=>m.style.display='none',3500);});
+}
+
+// ─── Shortcuts ────────────────────────────────────────────────────
+// Binds keyboard keys to three in-match actions:
+//  - nextPlayer: dispatches a synthetic Space keydown/keyup at the page,
+//    which is AutoDarts' own "confirm / next player" key.
+//  - back: dispatches a synthetic Backspace keydown/keyup, AutoDarts'
+//    own "back" key in menus.
+//  - calibrate: sends a POST to the local dartboard software's own HTTP
+//    API to trigger auto-calibration, completely separate from AutoDarts
+//    itself.
+// Stored as event.code values (e.g. "Space", "Backspace", "F9",
+// "KeyC") rather than event.key, since .code identifies the physical key
+// regardless of keyboard layout, which matters for a "press a key to
+// bind it" flow.
+const SHORTCUTS_KEY = 'adShortcuts';
+const DEFAULT_SHORTCUTS = { nextPlayer: 'Space', back: 'Backspace', calibrate: '' };
+const loadShortcuts = () => new Promise(r => chrome.storage.local.get(SHORTCUTS_KEY, d => r({...DEFAULT_SHORTCUTS, ...(d[SHORTCUTS_KEY]||{})})));
+const saveShortcuts = s => new Promise(r => chrome.storage.local.set({[SHORTCUTS_KEY]:s}, r));
+
+function dispatchKey(code, key, keyCode) {
+  const opts = { code, key, keyCode, which: keyCode, bubbles: true, cancelable: true, composed: true };
+  const target = document.activeElement && document.activeElement !== document.body ? document.activeElement : document;
+  target.dispatchEvent(new KeyboardEvent('keydown', opts));
+  target.dispatchEvent(new KeyboardEvent('keyup', opts));
+}
+
+async function triggerCalibrate() {
+  try {
+    await fetch('http://localhost:3180/api/config/calibration/auto?distortion=true', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (e) {
+    console.error('[AD-Shortcuts] Calibrate request failed - is the local AutoDarts board software running?', e);
+  }
+}
+
+let _shortcutsListenerInstalled = false;
+let _liveShortcuts = null;
+
+async function installShortcutListener() {
+  _liveShortcuts = await loadShortcuts();
+  if (_shortcutsListenerInstalled) return;
+  _shortcutsListenerInstalled = true;
+  document.addEventListener('keydown', (e) => {
+    // Never fire while the user is actually typing somewhere (our own
+    // inputs/textareas, or AutoDarts' own text fields) - only react to
+    // the bare key press.
+    const tag = (e.target && e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || e.target?.isContentEditable) return;
+    if (!_liveShortcuts) return;
+    if (_liveShortcuts.nextPlayer && e.code === _liveShortcuts.nextPlayer) {
+      e.preventDefault();
+      dispatchKey('Space', ' ', 32);
+    } else if (_liveShortcuts.back && e.code === _liveShortcuts.back) {
+      e.preventDefault();
+      dispatchKey('Backspace', 'Backspace', 8);
+    } else if (_liveShortcuts.calibrate && e.code === _liveShortcuts.calibrate) {
+      e.preventDefault();
+      triggerCalibrate();
+    }
+  }, true);
+}
+
+function keyLabel(code) {
+  if (!code) return '—';
+  const map = { Space:'Space', Backspace:'Backspace', Enter:'Enter', Escape:'Esc', ArrowUp:'↑', ArrowDown:'↓', ArrowLeft:'←', ArrowRight:'→' };
+  if (map[code]) return map[code];
+  if (code.startsWith('Key')) return code.slice(3);
+  if (code.startsWith('Digit')) return code.slice(5);
+  return code;
+}
+
+function renderShortcutsPage(){
+  clearAllPages();const mc=getMain();if(!mc)return;hideMain();
+  const t=T();
+  const pg=document.createElement('div');pg.id='adt-shortcuts';pg.style.cssText=`display:flex;flex-direction:column;align-items:center;padding:2rem 1.5rem;color:white;font-family:${FONT};min-height:80vh;width:100%;box-sizing:border-box;`;
+  const wrap=document.createElement('div');wrap.style.cssText='width:100%;max-width:600px;display:flex;flex-direction:column;gap:1rem;';
+  pg.appendChild(wrap);mc.appendChild(pg);
+  wrap.appendChild(backBtn('AutoDarts +',()=>{history.pushState(null,'',PLUS_PATH);renderHubPage();}));
+
+  const rowDef = [
+    { key: 'nextPlayer', label: t.scNextPlayer, desc: t.scNextPlayerDesc },
+    { key: 'back',       label: t.scBack,       desc: t.scBackDesc },
+    { key: 'calibrate',  label: t.scCalibrate,  desc: t.scCalibrateDesc }
+  ];
+
+  loadShortcuts().then(current => {
+    const rowsHtml = rowDef.map(r => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:.9rem 1rem;${r.key!=='nextPlayer'?'border-top:1px solid rgba(255,255,255,.05);':''}">
+        <div style="flex:1;min-width:0;padding-right:1rem;">
+          <div style="font-weight:700;font-size:.88rem;">${escHtml(r.label)}</div>
+          <div style="font-size:.72rem;color:rgba(255,255,255,.35);margin-top:.15rem;">${escHtml(r.desc)}</div>
+        </div>
+        <button class="adt-sc-keybtn" data-action="${r.key}" style="min-width:96px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:.5rem .9rem;color:white;font-weight:700;font-size:.78rem;font-family:monospace;cursor:pointer;text-align:center;">${escHtml(keyLabel(current[r.key]))}</button>
+      </div>`).join('');
+
+    wrap.innerHTML += `
+      <div>
+        <h1 style="font-size:1.25rem;font-weight:700;margin:0 0 .15rem;">${t.scTitle}</h1>
+        <p style="margin:0;font-size:.75rem;color:rgba(255,255,255,.38);">${t.scDesc}</p>
+      </div>
+      <div style="background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.075);border-radius:14px;overflow:hidden;">
+        ${rowsHtml}
+      </div>
+      <div id="adt-sc-hint" style="display:none;text-align:center;font-size:.78rem;color:#63b3ed;padding:.55rem;background:rgba(99,179,237,.08);border-radius:8px;border:1px solid rgba(99,179,237,.18);">${t.scListening}</div>
+    `;
+
+    const hint = document.getElementById('adt-sc-hint');
+    wrap.querySelectorAll('.adt-sc-keybtn').forEach(btn => {
+      btn.onclick = () => {
+        if (btn.dataset.capturing) return;
+        wrap.querySelectorAll('.adt-sc-keybtn').forEach(b => { delete b.dataset.capturing; b.style.borderColor='rgba(255,255,255,.12)'; });
+        btn.dataset.capturing = '1';
+        btn.style.borderColor = '#63b3ed';
+        btn.textContent = '…';
+        hint.style.display = 'block';
+        const capture = async (e) => {
+          e.preventDefault(); e.stopPropagation();
+          window.removeEventListener('keydown', capture, true);
+          delete btn.dataset.capturing;
+          hint.style.display = 'none';
+          if (e.code === 'Escape') {
+            // Escape cancels capture without changing the binding.
+            const cur = await loadShortcuts();
+            btn.textContent = keyLabel(cur[btn.dataset.action]);
+            return;
+          }
+          const updated = await loadShortcuts();
+          updated[btn.dataset.action] = e.code;
+          await saveShortcuts(updated);
+          _liveShortcuts = updated;
+          btn.textContent = keyLabel(e.code);
+          btn.style.borderColor = 'rgba(255,255,255,.12)';
+        };
+        window.addEventListener('keydown', capture, true);
+      };
+    });
+  });
 }
 
 // ─── Ranked pages ─────────────────────────────────────────────────
@@ -753,20 +967,37 @@ function watchUrl(cb){
 // ─── Main ─────────────────────────────────────────────────────────
 async function main(){
   try {
+    // pageScript.js (MAIN world, document_start) rewrites a hard-loaded
+    // /autodarts-plus/... URL to '/' before AutoDarts' own router boots,
+    // so it never 404s, and stashes the real intended path here. Pick it
+    // back up now that the real app shell has had a chance to mount
+    // normally, and treat it exactly like a normal in-app navigation to
+    // that path from here on.
+    let pendingPath = null;
+    try {
+        pendingPath = sessionStorage.getItem('_adPlusPendingPath');
+        if (pendingPath) sessionStorage.removeItem('_adPlusPendingPath');
+    } catch (e) {}
+    const initialPath = pendingPath || location.pathname;
+    const initialHref = pendingPath ? (location.origin + pendingPath) : location.href;
+    if (pendingPath) history.replaceState(history.state, '', pendingPath + location.search + location.hash);
+
     await waitFor('#root > div:nth-of-type(1)',20000);
 
-    if(location.href.includes('/matches')) injectDartSkin();
-    if(location.pathname.includes('/matches/')) setTimeout(startResultPolling,2500);
+    if(initialHref.includes('/matches')) injectDartSkin();
+    if(initialPath.includes('/matches/')) setTimeout(startResultPolling,2500);
 
     const mc=await waitFor('#root > div > div:nth-of-type(2)',10000).catch(()=>null);
     if(mc){
-      if(location.href.includes(CUSTOMIZE_PATH)){liveColors=await loadColors();renderCustomizePage();}
-      else if(location.href.includes(RANKED_PATH)) renderRankedPage();
-      else if(location.href.includes(TOURNEY_PATH)) renderTournamentPage();
-      else if(location.href.includes(PLUS_PATH)) renderHubPage();
+      if(initialHref.includes(CUSTOMIZE_PATH)){liveColors=await loadColors();renderCustomizePage();}
+      else if(initialHref.includes(RANKED_PATH)) renderRankedPage();
+      else if(initialHref.includes(TOURNEY_PATH)) renderTournamentPage();
+      else if(initialHref.includes(SHORTCUTS_PATH)) renderShortcutsPage();
+      else if(initialHref.includes(PLUS_PATH)) renderHubPage();
     }
 
     await injectSidebar(); // starts Observer — keeps button alive across navigations
+    installShortcutListener();
 
     watchUrl(async url=>{
       const m=await waitFor('#root > div > div:nth-of-type(2)',5000).catch(()=>null);
@@ -774,6 +1005,7 @@ async function main(){
       if(url.includes(CUSTOMIZE_PATH)){liveColors=await loadColors();renderCustomizePage();}
       else if(url.includes(RANKED_PATH)) renderRankedPage();
       else if(url.includes(TOURNEY_PATH)) renderTournamentPage();
+      else if(url.includes(SHORTCUTS_PATH)) renderShortcutsPage();
       else if(url.includes(PLUS_PATH)) renderHubPage();
       else clearAllPages();
       if(url.includes('/matches')){injectDartSkin();setTimeout(startResultPolling,2500);}
