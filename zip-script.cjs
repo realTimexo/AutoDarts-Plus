@@ -36,12 +36,23 @@ if (targetBrowser === 'firefox') {
         const overrides = JSON.parse(fs.readFileSync(overridesPath, 'utf8'));
         Object.assign(manifest, overrides);
     }
+    // Firefox's MV3 support requires background.scripts as a fallback
+    // alongside background.service_worker (Chrome/Edge accept
+    // service_worker alone) - without it, AMO's linter rejects the
+    // submission outright: "BACKGROUND_SERVICE_WORKER_NOFALLBACK".
+    if (manifest.background && manifest.background.service_worker && !manifest.background.scripts) {
+        manifest.background.scripts = [manifest.background.service_worker];
+    }
 }
 
 fs.writeFileSync(distManifestPath, JSON.stringify(manifest, null, 2));
 
 const version = manifest.version;
-const cleanName = manifest.name.replace(/\s+/g, '-');
+// manifest.name is now a "__MSG_...__" placeholder (resolved live by the
+// browser via _locales/*/messages.json, not at build time), so it can't
+// be used directly for the zip filename anymore - use a fixed name
+// instead of whatever literal string happens to be in the manifest.
+const cleanName = 'AutoDarts-Plus';
 const browserLabel = targetBrowser.charAt(0).toUpperCase() + targetBrowser.slice(1);
 const fileName = `${cleanName}-${version}-${browserLabel}.zip`;
 
