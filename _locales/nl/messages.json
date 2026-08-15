@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "AutoDarts +",
+    "description": "Naam van de extensie."
+  },
+  "extDescription": {
+    "message": "Dart-skin aanpassen, ranked-modus en lokale toernooien voor play.autodarts.io / play.autodarts.com",
+    "description": "Korte winkelbeschrijving."
+  }
+}
