@@ -1,16 +1,24 @@
 {
   "manifest_version": 3,
-  "name": "AutoDarts +",
-  "version": "1.2.4",
-  "description": "Dart skin customizer, ranked mode and local tournaments for play.autodarts.io / play.autodarts.com",
+  "name": "__MSG_extName__",
+  "version": "2.0.0",
+  "description": "__MSG_extDescription__",
+  "default_locale": "en",
 
-  "permissions": ["storage"],
+  "permissions": ["storage", "alarms"],
   "host_permissions": [
     "https://play.autodarts.io/*",
     "https://api.autodarts.io/*",
     "https://play.autodarts.com/*",
-    "https://api.autodarts.com/*"
+    "https://api.autodarts.com/*",
+    "https://api.github.com/*",
+    "http://localhost:3180/*",
+    "http://127.0.0.1:3180/*"
   ],
+
+  "background": {
+    "service_worker": "src/core/background.js"
+  },
 
   "action": {
     "default_popup": "popup.html",
