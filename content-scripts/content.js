@@ -301,13 +301,64 @@ const saveColors = c => new Promise(r => chrome.storage.local.set({dartColors:c}
 let _dartSkinObserver = null;
 let _dartSkinInterval = null;
 
+// Never touch the site's own logo/nav — a wide "AutoDarts" wordmark logo
+// can accidentally match the aspect-ratio heuristic below, which is what
+// caused the header logo to be overwritten with the custom dart skin
+// after navigating back out of a match. Anything living inside the
+// header/nav (or the "Autodarts" home link specifically) is off-limits
+// for every strategy, not just some of them.
+function isSkinExcluded(img) {
+  return !!(img.closest('header') || img.closest('nav') || img.closest('a[aria-label="Autodarts"]'));
+}
+
+// ── New site (play.autodarts.com) renders the in-match "darts thrown"
+// indicator as an inline <svg><path fill="#F7F8FA" d="M3.59665 0H..."/>
+// icon (one big one at the top of the score header, three small ones per
+// dart attempt) instead of an <img>. This is NOT the old flight/shaft/
+// barrel/point image — it's a single-color glyph, so we can only give it
+// one representative color, but doing that beats leaving it untouched.
+// Matching happens on the exact `d` path data, which is effectively a
+// fingerprint unique to this icon — there's no risk of it accidentally
+// matching an unrelated element the way a loose selector could.
+const DART_ICON_PATH_PREFIX = 'M3.59665 0H11.1107';
+function applyInlineSvgDartIcon(colorHex) {
+  const paths = document.querySelectorAll('svg path[fill="#F7F8FA"]');
+  let matched = 0;
+  paths.forEach(p => {
+    const d = p.getAttribute('d') || '';
+    if (d.startsWith(DART_ICON_PATH_PREFIX)) {
+      p.setAttribute('fill', colorHex);
+      matched++;
+    }
+  });
+  return matched;
+}
+
 async function injectDartSkin() {
   const c = await loadColors(); if (!c.enabled) return;
   const src = 'data:image/svg+xml;utf8,' + encodeURIComponent(buildSvg(c));
 
   const tryIt = () => {
-    const allImgs = Array.from(document.querySelectorAll('img'));
-    if (!allImgs.length) return false;
+    // Bail immediately if we've since navigated away from a match page —
+    // closes a race where a debounced MutationObserver/interval callback
+    // from the match page fires just after `stopDartSkinInjection()` was
+    // supposed to have cancelled it (e.g. right as `watchUrl` is still
+    // mid-callback), which could otherwise re-run `tryIt()` against the
+    // *new* (non-match) page's images.
+    if (!location.pathname.includes('/matches')) return false;
+
+    // Strategy 0: exact-match inline SVG dart icon (new site). Tried
+    // first because it's a precise fingerprint match, not a heuristic —
+    // if it hits, we're done and never need to touch any <img> at all.
+    const iconColor = isValidHexColor(c.flight) ? c.flight : DEFAULT_COLORS.flight;
+    const iconMatches = applyInlineSvgDartIcon(iconColor);
+    if (iconMatches > 0) {
+      console.log('[AutoDarts+] dart skin: recolored ' + iconMatches + ' inline dart-icon SVG path(s)');
+      return true;
+    }
+
+    const allImgs = Array.from(document.querySelectorAll('img')).filter(img => !isSkinExcluded(img));
+    if (!allImgs.length) { console.log('[AutoDarts+] dart skin: no candidate <img> elements found on this match page (site may render darts via canvas/SVG instead of <img> — please report this if it persists)'); return false; }
 
     // Strategy 1: dart-related attributes (works when .com uses descriptive attrs)
     const dartImgs = allImgs.filter(img =>
@@ -318,14 +369,21 @@ async function injectDartSkin() {
     );
     if (dartImgs.length >= 3) {
       dartImgs.slice(0, 3).forEach(img => { img.src = src; });
+      console.log('[AutoDarts+] dart skin: applied via attribute match (' + dartImgs.length + ' images)');
       return true;
     }
     if (dartImgs.length > 0) {
       dartImgs.forEach(img => { img.src = src; });
+      console.log('[AutoDarts+] dart skin: applied via attribute match (' + dartImgs.length + ' images)');
       return true;
     }
 
-    // Strategy 2: aspect-ratio based — dart SVG is ~4.7:1 (477x102)
+    // Strategy 2: aspect-ratio based — dart SVG is ~4.7:1 (477x102).
+    // Require at least 3 matches (one per dart) before trusting this: a
+    // single wide match is far more likely a stray banner/avatar/icon
+    // than the actual in-game dart image, and applying the skin to the
+    // wrong single element is how it silently "succeeds" while the real
+    // darts in the match stay untouched.
     const dartShaped = allImgs.filter(img => {
       const w = img.naturalWidth || img.width;
       const h = img.naturalHeight || img.height;
@@ -333,17 +391,23 @@ async function injectDartSkin() {
       const ratio = w / h;
       return ratio > 3.5 && ratio < 6.5;
     });
-    if (dartShaped.length > 0) {
+    if (dartShaped.length >= 3) {
       dartShaped.forEach(img => { img.src = src; });
+      console.log('[AutoDarts+] dart skin: applied via aspect-ratio match (' + dartShaped.length + ' images)');
       return true;
+    }
+    if (dartShaped.length > 0) {
+      console.log('[AutoDarts+] dart skin: found ' + dartShaped.length + ' aspect-ratio candidate(s) but need at least 3 to be confident — skipping to avoid hijacking the wrong image. Please report this (with a screenshot of the in-game dart element in DevTools) so the selector can be tightened.');
     }
 
     // Strategy 3: original index-based fallback (.io DOM: imgs 3-5)
     if (allImgs.length >= 6) {
       [3,4,5].forEach(i => { if (allImgs[i]) allImgs[i].src = src; });
+      console.log('[AutoDarts+] dart skin: applied via index fallback');
       return true;
     }
 
+    console.log('[AutoDarts+] dart skin: ' + allImgs.length + ' candidate image(s) found but none matched any strategy — please report the match page HTML if this keeps happening');
     return false;
   };
 
@@ -366,6 +430,7 @@ async function injectDartSkin() {
   // top of that so a burst of mutations only triggers one check.
   let _debounceTimer = null;
   _dartSkinObserver = new MutationObserver(() => {
+    if (!location.pathname.includes('/matches')) return;
     if (_debounceTimer) return;
     _debounceTimer = setTimeout(() => { _debounceTimer = null; tryIt(); }, 250);
   });
@@ -374,7 +439,10 @@ async function injectDartSkin() {
   // 2s) in case a re-render doesn't trigger a childList mutation we'd
   // catch above (e.g. the dart <img> src gets reset in place without the
   // element itself being replaced).
-  _dartSkinInterval = setInterval(tryIt, 2000);
+  _dartSkinInterval = setInterval(() => {
+    if (!location.pathname.includes('/matches')) { stopDartSkinInjection(); return; }
+    tryIt();
+  }, 2000);
 }
 
 function stopDartSkinInjection() {
@@ -817,13 +885,39 @@ function getTokenAsync(){return new Promise(res=>{if(window._adToken)return res(
 async function fetchUsername(token){try{const r=await fetch(window._AD_API+'/as/v0/users/me',{headers:{'Authorization':'Bearer '+token}});if(!r.ok)return null;const u=await r.json();return u.name||u.username||u.nick||(u.email?u.email.split('@')[0]:null)||null;}catch(e){return null;}}
 
 // ─── DOM helpers (unified) ────────────────────────────────────────
+// AutoDarts shipped a full redesign on play.autodarts.com (new Tailwind
+// UI: <header><nav aria-label="Main navigation">...) while the legacy
+// app (still reachable at play-v1.autodarts.com, and possibly still on
+// .io for a while) keeps the old Chakra DOM (#root > div > div > 2nd
+// child, .chakra-stack sidebar). Rather than branching every call site
+// on hostname, every selector we depend on is tried as a list, newest
+// layout first — this also means if AutoDarts tweaks class names again,
+// only this list needs updating.
+const MAIN_NAV_SELECTORS = [
+  'nav[aria-label="Main navigation"]',   // new site
+  '#root > div > div > .chakra-stack'     // legacy site
+];
+const MAIN_CONTENT_SELECTORS = [
+  'main .h-full.overflow-y-auto',        // new site
+  '#root > div > div:nth-of-type(2)'      // legacy site
+];
+const ROOT_READY_SELECTORS = [
+  '#root header',                         // new site
+  '#root > div:nth-of-type(1)'            // legacy site
+];
+
+function firstMatch(selectors){
+  for(const sel of selectors){ const el=document.querySelector(sel); if(el) return el; }
+  return null;
+}
 function waitFor(sel,ms=15000){
+  const selectors = Array.isArray(sel) ? sel : [sel];
   return new Promise((res,rej)=>{
-    const el=document.querySelector(sel);if(el){res(el);return;}
-    const t0=Date.now(),iv=setInterval(()=>{const f=document.querySelector(sel);if(f){clearInterval(iv);res(f);}else if(Date.now()-t0>=ms){clearInterval(iv);rej(new Error('timeout:'+sel));}},100);
+    const found=firstMatch(selectors);if(found){res(found);return;}
+    const t0=Date.now(),iv=setInterval(()=>{const f=firstMatch(selectors);if(f){clearInterval(iv);res(f);}else if(Date.now()-t0>=ms){clearInterval(iv);rej(new Error('timeout:'+selectors.join(' | ')));}},100);
   });
 }
-const getMain=()=>document.querySelector('#root > div > div:nth-of-type(2)');
+const getMain=()=>firstMatch(MAIN_CONTENT_SELECTORS);
 // hideMain knows ALL our prefixes — never accidentally hides dart skin or active pages
 function hideMain(){const m=getMain();if(!m)return;Array.from(m.children).forEach(c=>{const id=c.id||'';if(!id.startsWith('adt-')&&!id.startsWith('adr-')&&id!==TOURNEY_DIV_ID)c.style.display='none';});}
 function showMain(){const m=getMain();if(!m)return;Array.from(m.children).forEach(c=>c.style.display='');}
@@ -1119,7 +1213,7 @@ function hubCard(id,icon,ibg,ibrd,hvr,title,desc){
 function renderHubPage(){
   clearAllPages();const mc=getMain();if(!mc)return;hideMain();
   const t=T();
-  const pg=document.createElement('div');pg.id='adt-hub';pg.style.cssText=`display:flex;flex-direction:column;align-items:center;padding:2.5rem 1.5rem;color:white;font-family:${FONT};min-height:80vh;width:100%;box-sizing:border-box;`;
+  const pg=document.createElement('div');pg.id='adt-hub';pg.className='max-w-400 mx-auto';pg.style.cssText=`display:flex;flex-direction:column;align-items:center;padding:2.5rem 1.5rem;color:var(--color-mono-white,#fff);font-family:${FONT};min-height:80vh;width:100%;box-sizing:border-box;`;
 
   const btnBase=`cursor:pointer;font-family:${FONT};font-weight:600;font-size:.78rem;border-radius:9px;padding:.5rem 1rem;display:inline-flex;align-items:center;gap:.45rem;transition:background .15s;border:1px solid;`;
 
@@ -1283,7 +1377,7 @@ function renderHubPage(){
 // ─── Customize ────────────────────────────────────────────────────
 function renderCustomizePage(){
   clearAllPages();const mc=getMain();if(!mc)return;hideMain();
-  const pg=document.createElement('div');pg.id='adt-cust';pg.style.cssText=`display:flex;flex-direction:column;align-items:center;padding:2rem 1.5rem;color:white;font-family:${FONT};min-height:80vh;width:100%;box-sizing:border-box;`;
+  const pg=document.createElement('div');pg.id='adt-cust';pg.className='max-w-400 mx-auto';pg.style.cssText=`display:flex;flex-direction:column;align-items:center;padding:2rem 1.5rem;color:var(--color-mono-white,#fff);font-family:${FONT};min-height:80vh;width:100%;box-sizing:border-box;`;
   const wrap=document.createElement('div');wrap.style.cssText='width:100%;max-width:600px;display:flex;flex-direction:column;gap:1rem;';
   pg.appendChild(wrap);mc.appendChild(pg);
   wrap.appendChild(backBtn('AutoDarts +',()=>{history.pushState(null,'',PLUS_PATH);renderHubPage();}));
@@ -1416,7 +1510,7 @@ function keyLabel(code) {
 function renderShortcutsPage(){
   clearAllPages();const mc=getMain();if(!mc)return;hideMain();
   const t=T();
-  const pg=document.createElement('div');pg.id='adt-shortcuts';pg.style.cssText=`display:flex;flex-direction:column;align-items:center;padding:2rem 1.5rem;color:white;font-family:${FONT};min-height:80vh;width:100%;box-sizing:border-box;`;
+  const pg=document.createElement('div');pg.id='adt-shortcuts';pg.className='max-w-400 mx-auto';pg.style.cssText=`display:flex;flex-direction:column;align-items:center;padding:2rem 1.5rem;color:var(--color-mono-white,#fff);font-family:${FONT};min-height:80vh;width:100%;box-sizing:border-box;`;
   const wrap=document.createElement('div');wrap.style.cssText='width:100%;max-width:600px;display:flex;flex-direction:column;gap:1rem;';
   pg.appendChild(wrap);mc.appendChild(pg);
   wrap.appendChild(backBtn('AutoDarts +',()=>{history.pushState(null,'',PLUS_PATH);renderHubPage();}));
@@ -1483,7 +1577,7 @@ function renderShortcutsPage(){
 
 function renderAiCoachPage(){
   clearAllPages();const mc=getMain();if(!mc)return;hideMain();
-  const pg=document.createElement('div');pg.id='adt-ai-coach';pg.style.cssText=`display:flex;flex-direction:column;align-items:center;padding:2rem 1.5rem;color:white;font-family:${FONT};min-height:80vh;width:100%;box-sizing:border-box;`;
+  const pg=document.createElement('div');pg.id='adt-ai-coach';pg.className='max-w-400 mx-auto';pg.style.cssText=`display:flex;flex-direction:column;align-items:center;padding:2rem 1.5rem;color:var(--color-mono-white,#fff);font-family:${FONT};min-height:80vh;width:100%;box-sizing:border-box;`;
   const wrap=document.createElement('div');wrap.style.cssText='width:100%;max-width:640px;display:flex;flex-direction:column;gap:1rem;';
   pg.appendChild(wrap);mc.appendChild(pg);
   wrap.appendChild(backBtn('AutoDarts +',()=>{history.pushState(null,'',PLUS_PATH);safeRender(renderHubPage);}));
@@ -1625,7 +1719,7 @@ function renderAiCoachPage(){
 
 async function renderBotSelectPage(onSelect){
   clearAllPages();const mc=getMain();if(!mc)return;hideMain();
-  const pg=document.createElement('div');pg.id='adr-page';pg.style.cssText=`display:flex;flex-direction:column;align-items:center;padding:2.5rem 1.5rem;color:#fff;font-family:${FONT};min-height:80vh;width:100%;box-sizing:border-box;`;
+  const pg=document.createElement('div');pg.id='adr-page';pg.className='max-w-400 mx-auto';pg.style.cssText=`display:flex;flex-direction:column;align-items:center;padding:2.5rem 1.5rem;color:var(--color-mono-white,#fff);font-family:${FONT};min-height:80vh;width:100%;box-sizing:border-box;`;
   const wrap=document.createElement('div');wrap.style.cssText='width:100%;max-width:640px;';pg.appendChild(wrap);mc.appendChild(pg);
   wrap.appendChild(backBtn('AutoDarts +',()=>{history.pushState(null,'',PLUS_PATH);renderHubPage();}));
   const inner=document.createElement('div');inner.innerHTML=`
@@ -1650,7 +1744,7 @@ async function renderRankedPage(){
   const rankPath=RANKS.map((r,i)=>{const cur=i===data.rankIndex,done=i<data.rankIndex;return `<div style="display:flex;align-items:center;gap:4px;"><div title="${r.name}" style="width:${cur?28:20}px;height:${cur?28:20}px;border-radius:50%;background:${done||cur?r.grad:'rgba(255,255,255,.08)'};border:${cur?'2px solid '+r.color:'1px solid rgba(255,255,255,.1)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:${cur?'0 0 10px '+r.shadowColor:'none'};">${done||cur?getRankIcon(r.id,cur?20:14):''}</div>${i<RANKS.length-1?`<div style="width:10px;height:2px;background:${done?'rgba(255,255,255,.25)':'rgba(255,255,255,.07)'};border-radius:1px;"></div>`:''}</div>`;}).join('');
   const histRows=(data.history||[]).slice(0,8).map(h=>{const rA=RANKS[h.rankAfterId]||RANKS[0],pro=h.rankAfterId>h.rankBeforeId,dem=h.rankAfterId<h.rankBeforeId;const ds=new Date(h.date).toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:.55rem .8rem;display:flex;align-items:center;gap:.65rem;"><div style="width:26px;height:26px;border-radius:50%;background:${rA.grad};display:flex;align-items:center;justify-content:center;flex-shrink:0;">${getRankIcon(rA.id,18)}</div><div style="flex:1;"><div style="font-size:.78rem;font-weight:700;color:${h.won?'#68d391':'#fc8181'};">${h.won?'Won':'Loss'}${pro?' ⬆':dem?' ⬇':''}</div><div style="font-size:.67rem;color:rgba(255,255,255,.28);">${rA.name} — ${Math.round(h.pctAfter)}%</div></div><div style="font-size:.8rem;font-weight:700;color:${h.change>=0?'#68d391':'#fc8181'};flex-shrink:0;">${h.change>=0?'+':''}${h.change}%</div><div style="font-size:.63rem;color:rgba(255,255,255,.2);flex-shrink:0;">${ds}</div></div>`;}).join('');
   const allRanks=RANKS.map((r,i)=>{const cur=i===data.rankIndex,done=i<data.rankIndex;return `<div style="background:${cur?'rgba(255,255,255,.06)':'rgba(255,255,255,.02)'};border:1px solid ${cur?'rgba(255,255,255,.12)':'rgba(255,255,255,.05)'};border-radius:10px;padding:.5rem .8rem;display:flex;align-items:center;gap:.65rem;"><div style="width:30px;height:30px;border-radius:50%;background:${done||cur?r.grad:'rgba(255,255,255,.06)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">${done||cur?getRankIcon(r.id,22):''}</div><div style="flex:1;font-size:.82rem;font-weight:${cur?800:600};color:${cur?r.color:'rgba(255,255,255,.4)'};">${r.name}${cur?' <span style="font-size:.68rem;color:rgba(255,255,255,.3);">← You</span>':''}</div><div style="font-size:.68rem;text-align:right;"><div style="color:rgba(72,187,120,.6);">+${r.winMin}–${r.winMax}%</div><div style="color:rgba(245,101,101,.6);">-${r.lossMin}–${r.lossMax}%</div></div></div>`;}).join('');
-  const pg=document.createElement('div');pg.id='adr-page';pg.style.cssText=`display:flex;flex-direction:column;align-items:center;padding:2.5rem 1.5rem;color:#fff;font-family:${FONT};min-height:80vh;width:100%;box-sizing:border-box;`;
+  const pg=document.createElement('div');pg.id='adr-page';pg.className='max-w-400 mx-auto';pg.style.cssText=`display:flex;flex-direction:column;align-items:center;padding:2.5rem 1.5rem;color:var(--color-mono-white,#fff);font-family:${FONT};min-height:80vh;width:100%;box-sizing:border-box;`;
   const wrap=document.createElement('div');wrap.style.cssText='width:100%;max-width:680px;display:flex;flex-direction:column;gap:1.1rem;';pg.appendChild(wrap);mc.appendChild(pg);
   wrap.appendChild(backBtn('AutoDarts +',()=>{history.pushState(null,'',PLUS_PATH);renderHubPage();}));
   const inner=document.createElement('div');inner.style.cssText='display:flex;flex-direction:column;gap:1.1rem;';
@@ -1670,7 +1764,7 @@ async function renderRankedPage(){
 // ─── Tournament page ──────────────────────────────────────────────
 function renderTournamentPage(){
   clearAllPages();const mc=getMain();if(!mc)return;hideMain();
-  const pg=document.createElement('div');pg.id='adt-tourn';pg.style.cssText=`display:flex;flex-direction:column;padding:2rem 1.5rem;color:white;font-family:${FONT};min-height:80vh;width:100%;box-sizing:border-box;`;
+  const pg=document.createElement('div');pg.id='adt-tourn';pg.className='max-w-400 mx-auto';pg.style.cssText=`display:flex;flex-direction:column;padding:2rem 1.5rem;color:var(--color-mono-white,#fff);font-family:${FONT};min-height:80vh;width:100%;box-sizing:border-box;`;
   pg.appendChild(backBtn('AutoDarts +',()=>{history.pushState(null,'',PLUS_PATH);renderHubPage();}));
   const hdr=document.createElement('div');hdr.style.cssText='margin-bottom:1.5rem;';hdr.innerHTML=`<h1 style="font-size:1.25rem;font-weight:700;margin:0 0 .15rem;">Local Tournaments</h1><p style="margin:0;font-size:.75rem;color:rgba(255,255,255,.38);">KO · Groups + KO · League — automatic result sync</p>`;pg.appendChild(hdr);
   const td=document.createElement('div');td.id=TOURNEY_DIV_ID;td.style.cssText='flex:1;';pg.appendChild(td);
@@ -1681,13 +1775,49 @@ function renderTournamentPage(){
 }
 
 // ─── Sidebar ──────────────────────────────────────────────────────
-let sbInterval=null;
+// Rebuilt to be idempotent and non-overlapping: exactly one watchdog
+// runs a cheap *synchronous* DOM check on a fixed interval — it never
+// starts a second concurrent injection attempt while one might still be
+// pending, and it does nothing (no log spam) on pages where the nav is
+// simply not present (e.g. a fullscreen match view), instead of firing
+// a fresh 15s waitFor() every tick. That overlapping-timer bug is what
+// previously produced dozens of concurrent "Sidebar inject failed"
+// timeouts and, worse, could leave more than one button behind once the
+// nav reappeared.
+let _sidebarWatchdog=null;
+let _sidebarBusy=false;
 
-async function injectSidebar(){
+function buildNavButton(nav){
   document.getElementById('adt-plus-btn')?.remove();
-  try{
-    const stack=await waitFor('#root > div > div > .chakra-stack',15000);
-    const last=stack.lastElementChild;
+
+  if(nav.matches('nav[aria-label="Main navigation"]')){
+    // ── New site (play.autodarts.com): plain text nav link, no icon,
+    // same classes as Home/Play/Online/Tournaments/Stats.
+    const template=nav.querySelector('a[href]');
+    const btn=document.createElement('a');
+    btn.id='adt-plus-btn';
+    btn.href=PLUS_PATH;
+    btn.textContent='AutoDarts +';
+    btn.className=template
+      ? template.className.replace(/\btext-mono-white\b/g,'').replace(/\btext-black-20\b/g,'').trim()+' text-black-20 hover:text-mono-white'
+      : 'font-bold flex items-center relative hover:text-mono-white text-black-20';
+    // The site's hover/active underline is a single shared indicator
+    // element whose position is driven by React state on the *real*
+    // nav items — our injected link never triggers that. Fake the same
+    // visual feedback locally with a lightweight animated underline so
+    // it doesn't look inert next to Home/Play/Online/etc.
+    if(!document.getElementById('adt-nav-btn-style')){
+      const st=document.createElement('style');
+      st.id='adt-nav-btn-style';
+      st.textContent='#adt-plus-btn{position:relative;}#adt-plus-btn::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:2px;background:currentColor;border-radius:1px;transform:scaleX(0);transform-origin:center;transition:transform .25s cubic-bezier(.4,0,.2,1);}#adt-plus-btn:hover::after,#adt-plus-btn[data-status="active"]::after{transform:scaleX(1);}';
+      document.head.appendChild(st);
+    }
+    btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();history.pushState(null,'',PLUS_PATH);renderHubPage();});
+    nav.appendChild(btn);
+  } else {
+    // ── Legacy site (play-v1.autodarts.com / old .io build): icon +
+    // label button cloned from the last sidebar item, as before.
+    const last=nav.lastElementChild;
     if(!last)return;
     const btn=last.cloneNode(true);
     btn.removeAttribute('href');
@@ -1696,17 +1826,41 @@ async function injectSidebar(){
     const w=document.querySelector('#root > div > div')?.getBoundingClientRect().width||999;
     btn.innerHTML=PLUS_ICON+(w>170?`<span style="margin-left:.45rem;font-weight:700;">AutoDarts +</span>`:'');
     btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();history.pushState(null,'',PLUS_PATH);renderHubPage();});
-    stack.appendChild(btn);
-    if(sbInterval)clearInterval(sbInterval);
-    sbInterval=setInterval(()=>{
-      const b=document.getElementById('adt-plus-btn');
-      if(!b){injectSidebar();return;}
-      const w2=document.querySelector('#root > div > div')?.getBoundingClientRect().width||999;
-      if(w2<170) b.innerHTML=PLUS_ICON;
-      else if(w2>200) b.innerHTML=PLUS_ICON+`<span style="margin-left:.45rem;font-weight:700;">AutoDarts +</span>`;
-    },1000);
-  }catch(e){console.error('[AutoDarts+] Sidebar inject failed',e&&e.message);}
+    nav.appendChild(btn);
+  }
 }
+
+// Cheap per-tick maintenance: only touches the DOM when there's actually
+// something to fix (nav present + button missing/detached, or a legacy
+// button whose icon/label needs to react to a sidebar resize). No
+// waiting, no promises, so ticks can never pile up on top of each other.
+function maintainSidebarButton(){
+  if(_sidebarBusy) return;
+  const nav=firstMatch(MAIN_NAV_SELECTORS);
+  if(!nav) return; // e.g. fullscreen match view — nothing we can (or should) do right now
+  const existing=document.getElementById('adt-plus-btn');
+  if(existing && existing.isConnected){
+    if(nav.matches('nav[aria-label="Main navigation"]')){
+      existing.dataset.status = location.pathname.startsWith(PLUS_PATH) ? 'active' : '';
+    } else {
+      const w=document.querySelector('#root > div > div')?.getBoundingClientRect().width||999;
+      if(w<170) existing.innerHTML=PLUS_ICON;
+      else if(w>200) existing.innerHTML=PLUS_ICON+`<span style="margin-left:.45rem;font-weight:700;">AutoDarts +</span>`;
+    }
+    return;
+  }
+  _sidebarBusy=true;
+  try{ buildNavButton(nav); } finally { _sidebarBusy=false; }
+}
+
+async function injectSidebar(){
+  try{
+    const nav=await waitFor(MAIN_NAV_SELECTORS,15000);
+    buildNavButton(nav);
+  }catch(e){console.error('[AutoDarts+] Sidebar inject failed',e&&e.message);}
+  if(!_sidebarWatchdog) _sidebarWatchdog=setInterval(maintainSidebarButton,1500);
+}
+
 
 // ─── URL watcher ──────────────────────────────────────────────────
 let curUrl=location.href;
@@ -1734,13 +1888,13 @@ async function main(){
     const initialHref = pendingPath ? (location.origin + pendingPath) : location.href;
     if (pendingPath) history.replaceState(history.state, '', pendingPath + location.search + location.hash);
 
-    await waitFor('#root > div:nth-of-type(1)',20000);
+    await waitFor(ROOT_READY_SELECTORS,20000);
 
     if(initialHref.includes('/matches')) injectDartSkin();
     if(initialHref.includes('/history/matches/')) tryCaptureMatchForAi(initialHref);
     if(initialPath.includes('/matches/')) setTimeout(startResultPolling,2500);
 
-    const mc=await waitFor('#root > div > div:nth-of-type(2)',10000).catch(()=>null);
+    const mc=await waitFor(MAIN_CONTENT_SELECTORS,10000).catch(()=>null);
     if(mc){
       if(initialHref.includes(CUSTOMIZE_PATH)) safeRender(async()=>{liveColors=await loadColors();renderCustomizePage();});
       else if(initialHref.includes(RANKED_PATH)) safeRender(renderRankedPage);
@@ -1754,7 +1908,7 @@ async function main(){
     installShortcutListener();
 
     watchUrl(async url=>{
-      const m=await waitFor('#root > div > div:nth-of-type(2)',5000).catch(()=>null);
+      const m=await waitFor(MAIN_CONTENT_SELECTORS,5000).catch(()=>null);
       if(!m)return;
       if(url.includes(CUSTOMIZE_PATH)) safeRender(async()=>{liveColors=await loadColors();renderCustomizePage();});
       else if(url.includes(RANKED_PATH)) safeRender(renderRankedPage);
