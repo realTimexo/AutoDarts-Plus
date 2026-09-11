@@ -13,7 +13,9 @@
     "https://api.autodarts.com/*",
     "https://api.github.com/*",
     "http://localhost:3180/*",
-    "http://127.0.0.1:3180/*"
+    "http://127.0.0.1:3180/*",
+    "https://play-v1.autodarts.com/*",
+    "https://api-v1.autodarts.com/*"
   ],
 
   "background": {
@@ -39,7 +41,8 @@
     {
       "matches": [
         "https://play.autodarts.io/*",
-        "https://play.autodarts.com/*"
+        "https://play.autodarts.com/*",
+        "https://play-v1.autodarts.com/*"
       ],
       "js": ["src/core/pageScript.js"],
       "run_at": "document_start",
@@ -48,7 +51,8 @@
     {
       "matches": [
         "https://play.autodarts.io/*",
-        "https://play.autodarts.com/*"
+        "https://play.autodarts.com/*",
+        "https://play-v1.autodarts.com/*"
       ],
       "js": [
         "src/core/purify.js",
