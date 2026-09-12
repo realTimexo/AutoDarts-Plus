@@ -1,11 +1,13 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "__MSG_extDescription__",
   "default_locale": "en",
-
-  "permissions": ["storage", "alarms"],
+  "permissions": [
+    "storage",
+    "alarms"
+  ],
   "host_permissions": [
     "https://play.autodarts.io/*",
     "https://api.autodarts.io/*",
@@ -17,26 +19,22 @@
     "https://play-v1.autodarts.com/*",
     "https://api-v1.autodarts.com/*"
   ],
-
   "background": {
     "service_worker": "src/core/background.js"
   },
-
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16":  "icon/16.png",
-      "48":  "icon/48.png",
+      "16": "icon/16.png",
+      "48": "icon/48.png",
       "128": "icon/128.png"
     }
   },
-
   "icons": {
-    "16":  "icon/16.png",
-    "48":  "icon/48.png",
+    "16": "icon/16.png",
+    "48": "icon/48.png",
     "128": "icon/128.png"
   },
-
   "content_scripts": [
     {
       "matches": [
@@ -44,7 +42,9 @@
         "https://play.autodarts.com/*",
         "https://play-v1.autodarts.com/*"
       ],
-      "js": ["src/core/pageScript.js"],
+      "js": [
+        "src/core/pageScript.js"
+      ],
       "run_at": "document_start",
       "world": "MAIN"
     },
