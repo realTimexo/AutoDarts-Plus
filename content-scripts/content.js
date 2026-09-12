@@ -301,42 +301,51 @@ const saveColors = c => new Promise(r => chrome.storage.local.set({dartColors:c}
 let _dartSkinObserver = null;
 let _dartSkinInterval = null;
 
-// Never touch the site's own logo/nav — a wide "AutoDarts" wordmark logo
-// can accidentally match the aspect-ratio heuristic below, which is what
-// caused the header logo to be overwritten with the custom dart skin
-// after navigating back out of a match. Anything living inside the
-// header/nav (or the "Autodarts" home link specifically) is off-limits
-// for every strategy, not just some of them.
+// Never touch the site's own logo/nav (legacy <img> strategies only) — a
+// wide "AutoDarts" wordmark logo can accidentally match the aspect-ratio
+// heuristic, which is what caused the header logo to be overwritten
+// after navigating back out of a match on play-v1.
 function isSkinExcluded(img) {
   return !!(img.closest('header') || img.closest('nav') || img.closest('a[aria-label="Autodarts"]'));
 }
 
-// ── New site (play.autodarts.com) renders the in-match "darts thrown"
-// indicator as an inline <svg><path fill="#F7F8FA" d="M3.59665 0H..."/>
-// icon (one big one at the top of the score header, three small ones per
-// dart attempt) instead of an <img>. This is NOT the old flight/shaft/
-// barrel/point image — it's a single-color glyph, so we can only give it
-// one representative color, but doing that beats leaving it untouched.
-// Matching happens on the exact `d` path data, which is effectively a
-// fingerprint unique to this icon — there's no risk of it accidentally
-// matching an unrelated element the way a loose selector could.
-const DART_ICON_PATH_PREFIX = 'M3.59665 0H11.1107';
-function applyInlineSvgDartIcon(colorHex) {
-  const paths = document.querySelectorAll('svg path[fill="#F7F8FA"]');
-  let matched = 0;
-  paths.forEach(p => {
-    const d = p.getAttribute('d') || '';
-    if (d.startsWith(DART_ICON_PATH_PREFIX)) {
-      p.setAttribute('fill', colorHex);
-      matched++;
-    }
+// ── The in-match "darts thrown" indicator on the new site is an inline
+// <svg> icon — one big one at the top of the score header, three small
+// ones per dart attempt — each containing a path[fill="#F7F8FA"].
+// Nothing on the legacy site uses that fill color, so this is safe to
+// attempt unconditionally rather than gating it on a "which site is
+// this" DOM check: that check (presence of the new nav bar) is exactly
+// what made the previous fix silently no-op — a live match runs in a
+// fullscreen view where the nav element isn't in the DOM at all, so
+// "is the nav there?" was always false on the one page this needs to
+// run on. Matching by content signature instead of by page context
+// sidesteps that entirely.
+const DART_ICON_FILL = '#F7F8FA';
+function replaceNewSiteDartIcons(svgMarkup) {
+  let count = 0;
+  document.querySelectorAll('svg').forEach(svg => {
+    if (svg.dataset.adSkin) return; // already one of ours — don't reprocess / loop
+    if (!svg.querySelector('path[fill="' + DART_ICON_FILL + '"]')) return;
+    const rect = svg.getBoundingClientRect();
+    const wrapper = document.createElement('span');
+    wrapper.innerHTML = svgMarkup;
+    const newSvg = wrapper.firstElementChild;
+    if (!newSvg || newSvg.tagName.toLowerCase() !== 'svg') return;
+    // Keep the original element's on-screen box so the icon doesn't blow
+    // up the layout — these live in fixed-size containers.
+    const w = svg.getAttribute('width'); const h = svg.getAttribute('height');
+    if (w) newSvg.setAttribute('width', w); else if (rect.width) newSvg.style.width = rect.width + 'px';
+    if (h) newSvg.setAttribute('height', h); else if (rect.height) newSvg.style.height = rect.height + 'px';
+    if (svg.getAttribute('class')) newSvg.setAttribute('class', svg.getAttribute('class'));
+    newSvg.dataset.adSkin = '1';
+    svg.replaceWith(newSvg);
+    count++;
   });
-  return matched;
+  return count;
 }
 
 async function injectDartSkin() {
   const c = await loadColors(); if (!c.enabled) return;
-  const src = 'data:image/svg+xml;utf8,' + encodeURIComponent(buildSvg(c));
 
   const tryIt = () => {
     // Bail immediately if we've since navigated away from a match page —
@@ -347,16 +356,17 @@ async function injectDartSkin() {
     // *new* (non-match) page's images.
     if (!location.pathname.includes('/matches')) return false;
 
-    // Strategy 0: exact-match inline SVG dart icon (new site). Tried
-    // first because it's a precise fingerprint match, not a heuristic —
-    // if it hits, we're done and never need to touch any <img> at all.
-    const iconColor = isValidHexColor(c.flight) ? c.flight : DEFAULT_COLORS.flight;
-    const iconMatches = applyInlineSvgDartIcon(iconColor);
-    if (iconMatches > 0) {
-      console.log('[AutoDarts+] dart skin: recolored ' + iconMatches + ' inline dart-icon SVG path(s)');
-      return true;
-    }
+    const svgMarkup = buildSvg(c);
 
+    // Strategy 0: inline SVG dart-icon replacement (new site). Tried
+    // first, unconditionally — see comment above replaceNewSiteDartIcons
+    // for why this isn't gated behind a site-version check.
+    const n = replaceNewSiteDartIcons(svgMarkup);
+    if (n > 0) { console.log('[AutoDarts+] dart skin: replaced ' + n + ' inline dart-icon SVG(s)'); return true; }
+
+    // ── Everything below is legacy-site-only (play-v1.autodarts.com /
+    // old .io build), which renders the dart image as an <img> instead.
+    const src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svgMarkup);
     const allImgs = Array.from(document.querySelectorAll('img')).filter(img => !isSkinExcluded(img));
     if (!allImgs.length) { console.log('[AutoDarts+] dart skin: no candidate <img> elements found on this match page (site may render darts via canvas/SVG instead of <img> — please report this if it persists)'); return false; }
 
