@@ -34,10 +34,18 @@
         return 'en';
     };
 
-    // ── Domain detection: works on both .io and .com ──
-    const _tld = location.hostname.endsWith('.com') ? 'com' : 'io';
-    window._AD_PLAY = 'https://play.autodarts.' + _tld;
-    window._AD_API  = 'https://api.autodarts.'  + _tld;
+    // ── Domain detection: works on .io, .com (new site) and the legacy
+    // .com "-v1" deployment (play-v1.autodarts.com), which runs the old
+    // app on the new TLD. We used to hardcode "play.autodarts.<tld>",
+    // which silently rewrote every internal link (match/lobby URLs) on
+    // play-v1 over to the *new* site's URL space. Instead, derive both
+    // hosts directly from whatever host we're actually running on, only
+    // swapping the "play" prefix for "api" (works for play → api,
+    // play-v1 → api-v1, etc.) so the extension always talks to the same
+    // deployment it was loaded from.
+    const _host = location.hostname; // e.g. play.autodarts.io / play.autodarts.com / play-v1.autodarts.com
+    window._AD_PLAY = 'https://' + _host;
+    window._AD_API  = 'https://' + _host.replace(/^play/, 'api');
 
     window.adTourney.constants = {
         PAGE_ID: 'autodarts-tools-config',
